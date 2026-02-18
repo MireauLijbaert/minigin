@@ -1,6 +1,8 @@
 ﻿#include <stdexcept>
 #include <sstream>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #if WIN32
 #define WIN32_LEAN_AND_MEAN 
@@ -91,8 +93,27 @@ void dae::Minigin::Run(const std::function<void()>& load)
 {
 	load();
 #ifndef __EMSCRIPTEN__
+	const int ms_per_frame{ 16 };
+	const float fixed_time_step{ ms_per_frame }; // temporary number
+	auto lastTime = std::chrono::high_resolution_clock::now();
+	float lag{0.f};
 	while (!m_quit)
+	{
+		const auto current_time = std::chrono::high_resolution_clock::now();
+		const auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - lastTime).count();
+		lastTime = current_time;
+		lag += delta_time;
+		while (lag >= fixed_time_step)
+		{
+			// Fixed update
+			lag -= fixed_time_step;
+		}
 		RunOneFrame();
+		const auto sleepTime = std::chrono::milliseconds(ms_per_frame) - (std::chrono::high_resolution_clock::now() - current_time); // current_time as - at the end is different from the slides but mathematically the same and otherwise there are operator problems with the types
+		std::this_thread::sleep_for(sleepTime);
+	}
+		
+
 #else
 	emscripten_set_main_loop_arg(&LoopCallback, this, 0, true);
 #endif
