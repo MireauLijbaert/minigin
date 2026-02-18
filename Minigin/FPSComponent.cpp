@@ -14,3 +14,8 @@ void dae::FpsComponent::Update()
 		m_TextComponent->Update();
 	}
 }
+
+void dae::FpsComponent::Render()
+{
+	// Has to be here for build, but doesn't need to do anything as the text component will handle rendering the text, will figure out how to abstract this away later
+}
