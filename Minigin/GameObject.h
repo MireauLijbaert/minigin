@@ -9,8 +9,8 @@ namespace dae
 	class Texture2D;
 	class GameObject 
 	{
-		Transform m_transform{};
-		std::shared_ptr<Texture2D> m_texture{};
+		Transform m_transform{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
+		std::shared_ptr<Texture2D> m_texture{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
 	public:
 		// Game loop
 		virtual void Update();
