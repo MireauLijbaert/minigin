@@ -8,7 +8,6 @@ dae::RenderComponent::RenderComponent(GameObject& pOwner)
 {
 }
 
-
 dae::RenderComponent::~RenderComponent()
 {
 	m_texture.reset();
@@ -21,7 +20,7 @@ void dae::RenderComponent::Render()
 		return;
 	}
 
-	const auto& pos{ GetOwner()->GetPosition().GetPosition()}; // Will need to change naming as this is confusing
+	const auto& pos{ GetOwner()->GetPosition().GetPosition()}; // Will need to change naming as this is confusing CHANGE THIS
 	dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y);
 }
 
