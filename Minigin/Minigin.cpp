@@ -17,6 +17,7 @@
 #include "SceneManager.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "TimeSingleton.h"
 
 SDL_Window* g_window{};
 
@@ -100,7 +101,7 @@ void dae::Minigin::Run(const std::function<void()>& load)
 	while (!m_quit)
 	{
 		const auto current_time = std::chrono::high_resolution_clock::now();
-		const auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - lastTime).count();
+		const auto delta_time = std::chrono::duration<float>(current_time - lastTime).count();
 		lastTime = current_time;
 		lag += delta_time;
 		while (lag >= fixed_time_step)
@@ -108,8 +109,9 @@ void dae::Minigin::Run(const std::function<void()>& load)
 			// Fixed update
 			lag -= fixed_time_step;
 		}
+		dae::Time::GetInstance().SetDeltaTime(delta_time);
 		RunOneFrame();
-		const auto sleepTime = std::chrono::milliseconds(ms_per_frame) - (std::chrono::high_resolution_clock::now() - current_time); // current_time as - at the end is different from the slides but mathematically the same and otherwise there are operator problems with the types
+		const auto sleepTime = current_time + std::chrono::duration<float, std::milli>(ms_per_frame) - (std::chrono::high_resolution_clock::now());
 		std::this_thread::sleep_for(sleepTime);
 	}
 		
