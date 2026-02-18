@@ -31,6 +31,7 @@ namespace dae
 
 		void SetTexture(const std::string& filename);
 		void SetPosition(float x, float y);
+		dae::Transform GetPosition() const;
 
 		GameObject() = default;
 		virtual ~GameObject();

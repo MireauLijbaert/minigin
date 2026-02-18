@@ -25,6 +25,11 @@ void dae::GameObject::SetPosition(float x, float y)
 	m_transform.SetPosition(x, y, 0.0f);
 }
 
+dae::Transform dae::GameObject::GetPosition() const
+{
+	return m_transform;
+}
+
 // Component management
 
 template <typename T>
