@@ -11,11 +11,20 @@
 #include "TextObject.h"
 #include "Scene.h"
 
+#include "FPSComponent.h"
+#include "TextComponent.h"
+#include "RenderComponent.h"
+
+#include "Renderer.h"
+
+
 #include <filesystem>
 namespace fs = std::filesystem;
 
 static void load()
 {
+	// Base minigin code
+
 	auto& scene = dae::SceneManager::GetInstance().CreateScene();
 
 	auto go = std::make_unique<dae::GameObject>();
@@ -32,6 +41,16 @@ static void load()
 	to->SetColor({ 255, 255, 0, 255 });
 	to->SetPosition(292, 20);
 	scene.Add(std::move(to));
+
+	// Make FPS counter
+	auto fpsObject = std::make_unique<dae::GameObject>();
+	font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 25);
+	auto textComponent = std::make_unique<dae::TextComponent>(*fpsObject, "fps", font);
+	fpsObject->AddComponent(std::move(textComponent));
+	auto fpsComponent = std::make_unique<dae::FpsComponent>(*fpsObject, fpsObject->GetComponent<dae::TextComponent>());
+	fpsObject->SetPosition(20, 50);
+	fpsObject->AddComponent(std::move(fpsComponent));
+	scene.Add(std::move(fpsObject));
 }
 
 int main(int, char*[]) {
