@@ -7,14 +7,14 @@
 namespace dae
 {
 	class Texture2D;
-	class GameObject 
+	class GameObject final
 	{
 		Transform m_transform{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
 		std::shared_ptr<Texture2D> m_texture{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
 	public:
 		// Game loop
-		virtual void Update();
-		virtual void Render() const;
+		void Update();
+		void Render() const;
 
 		// Component management
 		template <typename T>
@@ -60,14 +60,20 @@ void dae::GameObject::AddComponent(std::unique_ptr<T> component)
 template <typename T>
 void dae::GameObject::RemoveComponent()
 {
-	for (auto it = m_components.begin(); it != m_components.end(); ++it)
+	/*for (auto it = m_components.begin(); it != m_components.end(); ++it)
 	{
 		if (dynamic_cast<T*>(it->get()))
 		{
 			m_components.erase(it);
 			return;
 		}
-	}
+	}*/
+
+	std::remove_if(m_components.begin(), m_components.end(), [](const std::unique_ptr<BaseComponent>& component))
+	{
+		return dynamic_cast<T*>(component.get()))
+	});
+	
 }
 
 template <typename T>

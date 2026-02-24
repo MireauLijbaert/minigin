@@ -94,25 +94,10 @@ void dae::Minigin::Run(const std::function<void()>& load)
 {
 	load();
 #ifndef __EMSCRIPTEN__
-	const int ms_per_frame{ 16 };
-	const float fixed_time_step{ ms_per_frame }; // temporary number
-	auto lastTime = std::chrono::high_resolution_clock::now();
-	float lag{0.f};
+	
 	while (!m_quit)
 	{
-		const auto current_time = std::chrono::high_resolution_clock::now();
-		const auto delta_time = std::chrono::duration<float>(current_time - lastTime).count();
-		lastTime = current_time;
-		lag += delta_time;
-		while (lag >= fixed_time_step)
-		{
-			// Fixed update
-			lag -= fixed_time_step;
-		}
-		dae::Time::GetInstance().SetDeltaTime(delta_time);
 		RunOneFrame();
-		const auto sleepTime = current_time + std::chrono::duration<float, std::milli>(ms_per_frame) - (std::chrono::high_resolution_clock::now());
-		std::this_thread::sleep_for(sleepTime);
 	}
 		
 
@@ -123,7 +108,18 @@ void dae::Minigin::Run(const std::function<void()>& load)
 
 void dae::Minigin::RunOneFrame()
 {
+	// Had to move everything here to be able to calculate delta time in this function
+	const auto current_time = std::chrono::high_resolution_clock::now();
+	const auto delta_time = std::chrono::duration<float>(current_time - m_lastTime).count();
+	m_lastTime = current_time;
+
+	// Don't need a fixed time step for this project
+	dae::Time::GetInstance().SetDeltaTime(delta_time);
 	m_quit = !InputManager::GetInstance().ProcessInput();
 	SceneManager::GetInstance().Update();
 	Renderer::GetInstance().Render();
+
+	// Sleep for the remaining time until we reach the desired frame time (16 ms for 60 FPS)
+	const auto sleepTime = current_time + std::chrono::duration<float, std::milli>(m_ms_per_frame) - (std::chrono::high_resolution_clock::now());
+	std::this_thread::sleep_for(sleepTime);
 }

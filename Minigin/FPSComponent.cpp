@@ -11,7 +11,6 @@ void dae::FpsComponent::Update()
 	{
 		m_DelayUpdate = 0;
 		m_TextComponent->SetText(std::to_string(static_cast<int>(fps)) + " FPS");
-		m_TextComponent->Update();
 	}
 }
 
