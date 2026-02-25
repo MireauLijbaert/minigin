@@ -10,7 +10,7 @@ namespace dae
 	{
 	public:
 		void Add(std::unique_ptr<GameObject> object);
-		void Remove(const GameObject& object);
+		void Remove(GameObject& object); // Removed const as marking for removal is now handled by the GameObject itself, and we need to modify the object to mark it for removal
 		void RemoveAll();
 
 		void Update();
@@ -26,7 +26,8 @@ namespace dae
 		friend class SceneManager;
 		explicit Scene() = default;
 
-		std::vector < std::unique_ptr<GameObject>> m_objects{};
+		std::vector<std::unique_ptr<GameObject>> m_objects{};
+		std::vector<std::unique_ptr<GameObject>> m_objectsToRemove{};
 	};
 
 }

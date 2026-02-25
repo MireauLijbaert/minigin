@@ -11,14 +11,6 @@ void dae::GameObject::Update()
 	{
 		component->Update();
 	}
-	// Remove components that were marked for removal
-	for (const auto& component : m_componentsToRemove)
-	{
-		m_components.erase(std::remove_if(m_components.begin(), m_components.end(),
-			[component](const std::unique_ptr<BaseComponent>& ptr) { return ptr.get() == component; }),
-			m_components.end());
-	}
-	m_componentsToRemove.clear();
 }
 
 void dae::GameObject::Render() const
@@ -30,6 +22,11 @@ void dae::GameObject::Render() const
 	{
 		component->Render();
 	}
+}
+
+void dae::GameObject::MarkForRemoval()
+{
+	m_markedForRemoval = true;
 }
 
 void dae::GameObject::SetTexture(const std::string& filename)

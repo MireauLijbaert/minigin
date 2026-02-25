@@ -15,6 +15,8 @@ namespace dae
 		// Game loop
 		void Update();
 		void Render() const;
+		void MarkForRemoval();
+		bool IsMarkedForRemoval() const { return m_markedForRemoval; }
 
 		// Component management
 		template <typename T>
@@ -43,8 +45,7 @@ namespace dae
 	private:
 		// Members
 		std::vector<std::unique_ptr<BaseComponent>> m_components{};
-		std::vector<BaseComponent*> m_componentsToRemove{};
-
+		bool m_markedForRemoval{ false };
 	};
 }
 
@@ -60,20 +61,18 @@ void dae::GameObject::AddComponent(std::unique_ptr<T> component)
 template <typename T>
 void dae::GameObject::RemoveComponent()
 {
-	/*for (auto it = m_components.begin(); it != m_components.end(); ++it)
-	{
-		if (dynamic_cast<T*>(it->get()))
-		{
-			m_components.erase(it);
-			return;
-		}
-	}*/
-
-	std::remove_if(m_components.begin(), m_components.end(), [](const std::unique_ptr<BaseComponent>& component))
-	{
-		return dynamic_cast<T*>(component.get()))
-	});
-	
+	// Remove all components of type T, normally i should only have one, components also don't require mark for deletion (teacher's advice)
+	m_components.erase(
+		std::remove_if(
+			m_components.begin(),
+			m_components.end(),
+			[](const std::unique_ptr<BaseComponent>& component)
+			{
+				return dynamic_cast<T*>(component.get()) != nullptr;
+			}
+		),
+		m_components.end()
+	);
 }
 
 template <typename T>

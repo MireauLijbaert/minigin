@@ -4,21 +4,23 @@
 using namespace dae;
 
 void Scene::Add(std::unique_ptr<GameObject> object)
-{
+{  
 	assert(object != nullptr && "Cannot add a null GameObject to the scene.");
 	m_objects.emplace_back(std::move(object));
 }
 
-void Scene::Remove(const GameObject& object)
+void Scene::Remove(GameObject& object)
 {
-	m_objects.erase(
+	object.MarkForRemoval();
+	
+	/*m_objects.erase(
 		std::remove_if(
 			m_objects.begin(),
 			m_objects.end(),
 			[&object](const auto& ptr) { return ptr.get() == &object; }
 		),
 		m_objects.end()
-	);
+	);*/
 }
 
 void Scene::RemoveAll()
@@ -32,6 +34,19 @@ void Scene::Update()
 	{
 		object->Update();
 	}
+
+	// Remove objects that are marked for removal
+	m_objects.erase(
+		std::remove_if(
+			m_objects.begin(),
+			m_objects.end(),
+			[](const std::unique_ptr<GameObject>& obj)
+			{
+				return obj->IsMarkedForRemoval();
+			}
+		),
+		m_objects.end()
+	);
 }
 
 void Scene::Render() const
