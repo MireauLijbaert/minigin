@@ -33,7 +33,7 @@ namespace dae
 
 		GameObject* GetParent();
 		void SetParent(GameObject* parent, bool keepWorldPosition);
-		int GetChildCount() const;
+		size_t GetChildCount() const;
 		GameObject* GetChildAt(int index) const;
 
 		// Position management
