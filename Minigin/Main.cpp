@@ -13,6 +13,8 @@
 #include "FPSComponent.h"
 #include "TextComponent.h"
 #include "RenderComponent.h"
+// temporary for testing
+#include "RotationComponent.h"
 
 #include "Renderer.h"
 
@@ -75,50 +77,37 @@ static void load()
 	fpsObject->SetLocalPosition(20, 50);
 	scene.Add(std::move(fpsObject));
 
+	// ---------- Player 1 (rotation test, orbits around set location) ----------
+	auto player1 = std::make_unique<dae::GameObject>();
+	player1->SetLocalPosition(512, 288); // Set local position to center of screen, rotation component will rotate around this point
+	// Add render component and set texture
+	auto render1 = std::make_unique<dae::RenderComponent>(*player1);
+	render1->SetTexture("RedPengo.png");
+	player1->AddComponent(std::move(render1));
 
-	// Old way of doing it if new way doesn't work
-	//// Background
-	//auto background = std::make_unique<dae::GameObject>();
-	//auto backgroundRender = std::make_unique<dae::RenderComponent>(*background);
-	//background->AddComponent(std::move(backgroundRender));
-	//background->SetPosition(0, 0);
+	// Add rotation component (radius, speed)
+	auto rot1 = std::make_unique<dae::RotationComponent>(*player1, 2.f, 100.f);
+	player1->AddComponent(std::move(rot1));
 
-	//background->GetComponent<dae::RenderComponent>()->SetTexture("background.png");
-	//scene.Add(std::move(background));
+	
 
-	//// Logo
+	// ---------- Player 2 (rotation test, orbits around player 1 ) ----------
+	auto player2 = std::make_unique<dae::GameObject>();
 
-	//auto logo = std::make_unique<dae::GameObject>();
-	//auto logoRender = std::make_unique<dae::RenderComponent>(*logo);
-	//logo->AddComponent(std::move(logoRender));
-	//logo->SetPosition(358, 180);
+	// Add render component and set texture
+	auto render2 = std::make_unique<dae::RenderComponent>(*player2);
+	render2->SetTexture("PinkPengo.png");
+	player2->AddComponent(std::move(render2));
 
-	//logo->GetComponent<dae::RenderComponent>()->SetTexture("logo.png");
+	// Set Player1 as parent so it orbits correctly
+	player2->SetParent(player1.get(), false);
 
-	//scene.Add(std::move(logo));
+	// Add rotation component
+	auto rot2 = std::make_unique<dae::RotationComponent>(*player2, 3.f, 100.f);
+	player2->AddComponent(std::move(rot2));
 
-	//// Title
-	//auto textObject = std::make_unique<dae::GameObject>();
-	//auto renderComponent = std::make_unique<dae::RenderComponent>(*textObject);
-	//auto font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
-	//textObject->AddComponent(std::move(renderComponent));
-	//auto textComponent = std::make_unique<dae::TextComponent>(*textObject, textObject->GetComponent<dae::RenderComponent>(), "Programming 4 Assignment", font);
-	//textComponent->SetColor({ 255, 255, 0, 255 });
-	//textObject->AddComponent(std::move(textComponent));
-	//textObject->SetPosition(292, 20);
-	//scene.Add(std::move(textObject));
-
-
-	//// FPS counter
-	//auto fpsObject = std::make_unique<dae::GameObject>();
-	//renderComponent = std::make_unique<dae::RenderComponent>(*fpsObject);
-	//font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 25);
-	//textComponent = std::make_unique<dae::TextComponent>(*fpsObject, fpsObject->GetComponent<dae::RenderComponent>(), "fps", font);
-	//fpsObject->AddComponent(std::move(textComponent));
-	//auto fpsComponent = std::make_unique<dae::FpsComponent>(*fpsObject, fpsObject->GetComponent<dae::TextComponent>());
-	//fpsObject->SetPosition(20, 50);
-	//fpsObject->AddComponent(std::move(fpsComponent));
-	//scene.Add(std::move(fpsObject));
+	scene.Add(std::move(player1));
+	scene.Add(std::move(player2));
 }
 
 int main(int, char*[]) {
