@@ -9,7 +9,6 @@ namespace dae
 	class Texture2D;
 	class GameObject final
 	{
-		Transform m_transform{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
 	public:
 		// Game loop
 		void Update();
@@ -33,12 +32,18 @@ namespace dae
 		// Parent-Child management
 
 		GameObject* GetParent();
-		void SetParent(GameObject* parent);
+		void SetParent(GameObject* parent, bool keepWorldPosition);
 		int GetChildCount() const;
 		GameObject* GetChildAt(int index) const;
 
-		void SetPosition(float x, float y);
-		dae::Transform GetPosition() const;
+		// Position management
+		void SetLocalPosition(float x, float y);
+		void SetLocalPosition(const Transform& localPosition);
+		Transform GetLocalPosition() const;
+		Transform GetWorldPosition();
+
+
+		// Rule of 5
 
 		GameObject() = default;
 		virtual ~GameObject();
@@ -52,15 +57,22 @@ namespace dae
 		std::vector<std::unique_ptr<BaseComponent>> m_components{};
 		bool m_markedForRemoval{ false };
 
-		// Parent-Child
+		// Parent-Child Members
 		GameObject* m_parent{ nullptr };
 		std::vector<GameObject*> m_children{};
+
+		// Position Members
+		bool m_isPositionDirty{ false };
 		Transform m_localPosition{};
 		Transform m_worldPosition{};
 
 		// Private Parent-Child Functions
 		void AddChild(GameObject* child);
 		void RemoveChild(GameObject* child);
+
+		// Private Position Functions
+		void UpdateWorldPosition();
+		void SetPositionDirty();
 	};
 }
 

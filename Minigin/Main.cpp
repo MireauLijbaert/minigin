@@ -33,7 +33,7 @@ static void load()
 	auto backgroundRenderPtr = backgroundRender.get(); // keep raw pointer
 	background->AddComponent(std::move(backgroundRender));
 	backgroundRenderPtr->SetTexture("background.png");
-	background->SetPosition(0, 0);
+	background->SetLocalPosition(0, 0);
 	scene.Add(std::move(background));
 
 	// ---------- Logo ----------
@@ -42,7 +42,7 @@ static void load()
 	auto logoRenderPtr = logoRender.get(); // raw pointer
 	logo->AddComponent(std::move(logoRender));
 	logoRenderPtr->SetTexture("logo.png");
-	logo->SetPosition(358, 180);
+	logo->SetLocalPosition(358, 180);
 	scene.Add(std::move(logo));
 
 	// ---------- Title ----------
@@ -56,7 +56,7 @@ static void load()
 	);
 	textComponent->SetColor({ 255, 255, 0, 255 });
 	textObject->AddComponent(std::move(textComponent));
-	textObject->SetPosition(292, 20);
+	textObject->SetLocalPosition(292, 20);
 	scene.Add(std::move(textObject));
 
 	// ---------- FPS Counter ----------
@@ -72,7 +72,7 @@ static void load()
 	auto fpsTextPtr = fpsObject->GetComponent<dae::TextComponent>();
 	auto fpsComponent = std::make_unique<dae::FpsComponent>(*fpsObject, fpsTextPtr);
 	fpsObject->AddComponent(std::move(fpsComponent));
-	fpsObject->SetPosition(20, 50);
+	fpsObject->SetLocalPosition(20, 50);
 	scene.Add(std::move(fpsObject));
 
 

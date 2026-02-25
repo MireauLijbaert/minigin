@@ -20,7 +20,7 @@ void dae::RenderComponent::Render()
 		return;
 	} 
 
-	const auto& pos{ GetOwner()->GetPosition().GetPosition()}; // Will need to change naming as this is confusing CHANGE THIS
+	const auto& pos{ GetOwner()->GetWorldPosition().GetPosition()};
 	dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y);
 }
 

@@ -33,7 +33,7 @@ dae::GameObject* dae::GameObject::GetParent()
 	return m_parent;
 }
 
-void dae::GameObject::SetParent(GameObject* parent)
+void dae::GameObject::SetParent(GameObject* parent, bool keepWorldPosition)
 {
 	// Do 5 things
 	// 1. Check validity of new parent (can't be self, can't be a child of this object) or if parent is already the parent of this object
@@ -45,14 +45,20 @@ void dae::GameObject::SetParent(GameObject* parent)
 	// 2. Update position, rotation and scale
 	if (parent == nullptr)
 	{
-		// Change to use function
-		m_transform = m_localPosition;
-
+		SetLocalPosition(GetWorldPosition());
 	}
 	else
 	{
-		// Change to use function
-		m_transform.SetPosition(parent->GetPosition().GetPosition() + m_localPosition.GetPosition());
+		if (keepWorldPosition)
+		{
+			// Could make an operator overload of this later on to do it like it is in the slides
+			//m_localPos = parent->GetWorldPosition() + m_localPosition;
+			Transform localPos{};
+			localPos.SetPosition(GetWorldPosition().GetPosition() - parent->GetWorldPosition().GetPosition());
+			SetLocalPosition(localPos);
+		}
+		SetPositionDirty();
+		
 	}
 
 	// 3. Remove itself from previous parent (if parent is not null)
@@ -81,14 +87,31 @@ dae::GameObject* dae::GameObject::GetChildAt(int index) const
 	return m_children.at(index);
 }
 
-void dae::GameObject::SetPosition(float x, float y)
+// Position management
+
+void dae::GameObject::SetLocalPosition(float x, float y)
 {
-	m_transform.SetPosition(x, y, 0.0f);
+	// 2D space, Z is always 0
+	m_localPosition.SetPosition(x, y, 0.0f);
+	SetPositionDirty();
 }
 
-dae::Transform dae::GameObject::GetPosition() const
+void dae::GameObject::SetLocalPosition(const Transform& localPosition)
 {
-	return m_transform;
+	SetLocalPosition(localPosition.GetPosition().x, localPosition.GetPosition().y);
+	SetPositionDirty();
+}
+
+dae::Transform dae::GameObject::GetLocalPosition() const
+{
+	return m_localPosition;
+}
+
+dae::Transform dae::GameObject::GetWorldPosition()
+{
+	if (m_isPositionDirty)
+		UpdateWorldPosition();
+	return m_worldPosition;
 }
 
 // Private Parent-Child Functions
@@ -111,5 +134,28 @@ void dae::GameObject::RemoveChild(GameObject* child)
 		std::remove(m_children.begin(), m_children.end(), child),
 		m_children.end()
 	);
+}
+
+void dae::GameObject::UpdateWorldPosition()
+{
+	if (m_isPositionDirty)
+	{
+		if (m_parent == nullptr)
+		{
+			m_worldPosition = m_localPosition;
+		}
+		else
+		{
+			m_worldPosition.SetPosition(m_parent->GetWorldPosition().GetPosition() + m_localPosition.GetPosition());
+			// Could make an operator overload of this later on to do it like it is in the slides
+			//m_worldPosition = m_parent->GetWorldPosition() + m_localPosition;
+		}
+		m_isPositionDirty = false;
+	}
+}
+
+void dae::GameObject::SetPositionDirty()
+{
+	m_isPositionDirty = true;
 }
 
