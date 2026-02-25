@@ -1,3 +1,4 @@
+#pragma once
 #include "BaseComponent.h"
 #include <memory>
 #include "Texture2D.h"
@@ -19,6 +20,7 @@ namespace dae
 		void Update() override {};
 		void Render() override;
 		void SetTexture(const std::string& filename);
+		void SetTexture(const std::shared_ptr<Texture2D>& texture); // Overload to set texture directly, useful for text rendering
 
 	private:
 

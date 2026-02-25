@@ -4,6 +4,8 @@
 #include <memory>
 #include "Font.h"
 #include "Texture2D.h"
+#include <SDL3/SDL.h>
+#include "RenderComponent.h"
 
 namespace dae
 {
@@ -11,7 +13,7 @@ namespace dae
 	{
 	public:
 		//Constructor
-		TextComponent(GameObject& pOwner, const std::string& text, std::shared_ptr<Font> font);
+		TextComponent(GameObject& pOwner, RenderComponent* renderComponent,const std::string& text, std::shared_ptr<Font> font);
 
 		//Destructor
 		virtual ~TextComponent() override;
@@ -26,12 +28,15 @@ namespace dae
 		virtual void Render() override;
 
 		virtual void SetText(const std::string& text);
-	private:
+		virtual void SetColor(const SDL_Color& color);
 
+	private:
+		RenderComponent* m_renderComponent{};
 		bool m_needsUpdate;
 		std::string m_text;
 		std::shared_ptr<Font> m_font;
 		std::shared_ptr<Texture2D> m_textTexture;
+		SDL_Color m_color{255, 255, 255, 255};
 	};
 }
 

@@ -10,7 +10,7 @@ namespace dae
 	{
 	public:
 
-		FpsComponent(GameObject& pOwner, TextComponent* textComponent) : BaseComponent(pOwner), m_TextComponent{ textComponent } {};
+		FpsComponent(GameObject& pOwner, TextComponent* textComponent) : BaseComponent(pOwner), m_textComponent{ textComponent } {};
 		~FpsComponent() = default;
 		FpsComponent(const FpsComponent& other) = default;
 		FpsComponent(FpsComponent&& other) = default;
@@ -21,7 +21,7 @@ namespace dae
 		void Render() override;
 
 	private:
-		TextComponent* m_TextComponent{};
-		float m_DelayUpdate{ 0 };
+		TextComponent* m_textComponent{};
+		float m_delayUpdate{ 0 };
 	};
 }

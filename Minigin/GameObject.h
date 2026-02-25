@@ -10,7 +10,6 @@ namespace dae
 	class GameObject final
 	{
 		Transform m_transform{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
-		std::shared_ptr<Texture2D> m_texture{}; // Should be removed for component based rendering, but will keep for now to avoid refactoring too much at once, will remove in the future
 	public:
 		// Game loop
 		void Update();
@@ -31,7 +30,6 @@ namespace dae
 		template <typename T>
 		bool HasComponent() const;
 
-		void SetTexture(const std::string& filename);
 		void SetPosition(float x, float y);
 		dae::Transform GetPosition() const;
 
