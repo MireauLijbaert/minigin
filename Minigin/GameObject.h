@@ -30,6 +30,13 @@ namespace dae
 		template <typename T>
 		bool HasComponent() const;
 
+		// Parent-Child management
+
+		GameObject* GetParent();
+		void SetParent(GameObject* parent);
+		int GetChildCount() const;
+		GameObject* GetChildAt(int index) const;
+
 		void SetPosition(float x, float y);
 		dae::Transform GetPosition() const;
 
@@ -44,6 +51,16 @@ namespace dae
 		// Members
 		std::vector<std::unique_ptr<BaseComponent>> m_components{};
 		bool m_markedForRemoval{ false };
+
+		// Parent-Child
+		GameObject* m_parent{ nullptr };
+		std::vector<GameObject*> m_children{};
+		Transform m_localPosition{};
+		Transform m_worldPosition{};
+
+		// Private Parent-Child Functions
+		void AddChild(GameObject* child);
+		void RemoveChild(GameObject* child);
 	};
 }
 
