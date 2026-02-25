@@ -86,7 +86,7 @@ static void load()
 	player1->AddComponent(std::move(render1));
 
 	// Add rotation component (radius, speed)
-	auto rot1 = std::make_unique<dae::RotationComponent>(*player1, 2.f, 100.f);
+	auto rot1 = std::make_unique<dae::RotationComponent>(*player1, 0.5f, 100.f);
 	player1->AddComponent(std::move(rot1));
 
 	
@@ -103,7 +103,7 @@ static void load()
 	player2->SetParent(player1.get(), false);
 
 	// Add rotation component
-	auto rot2 = std::make_unique<dae::RotationComponent>(*player2, 3.f, 100.f);
+	auto rot2 = std::make_unique<dae::RotationComponent>(*player2, -1.f, 100.f);
 	player2->AddComponent(std::move(rot2));
 
 	scene.Add(std::move(player1));

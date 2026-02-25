@@ -22,11 +22,23 @@ namespace dae
             const float rad = m_angle * 3.14159265f / 180.f;
 
             const Transform center = GetRotationCenter();
+            
+            GameObject* parent = GetOwner()->GetParent();
+            if (parent)
+            {
+                const float x = m_radius * std::cos(rad);
+                const float y = m_radius * std::sin(rad);
+                GetOwner()->SetLocalPosition(x, y);
+            }
+            else
+            {
+                const float x = center.GetPosition().x + m_radius * std::cos(rad);
+                const float y = center.GetPosition().y + m_radius * std::sin(rad);
+                GetOwner()->SetLocalPosition(x, y);
+            }
+            
 
-            const float x = center.GetPosition().x + m_radius * std::cos(rad);
-            const float y = center.GetPosition().y + m_radius * std::sin(rad);
-
-            GetOwner()->SetLocalPosition(x, y);
+            
         }
 
         void Render() override {}
