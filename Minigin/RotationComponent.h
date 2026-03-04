@@ -10,7 +10,7 @@ namespace dae
     {
     public:
         RotationComponent(GameObject& owner, float angularSpeed, float radius, float initialAngle = 0.f)
-            : BaseComponent(owner), m_speed(angularSpeed), m_radius(radius), m_angle(initialAngle), m_center( owner.GetWorldPosition() ) {
+            : BaseComponent(owner), m_speed(angularSpeed), m_radius(radius), m_angle(initialAngle) {
         }
 
         void Update() override
@@ -18,46 +18,20 @@ namespace dae
             m_angle += m_speed;
             if (m_angle >= 360.f)
                 m_angle -= 360.f;
+			else if (m_angle < 0.f)
+                m_angle += 360.f;
 
             const float rad = m_angle * 3.14159265f / 180.f;
-
-            const Transform center = GetRotationCenter();
-            
-            GameObject* parent = GetOwner()->GetParent();
-            if (parent)
-            {
-                const float x = m_radius * std::cos(rad);
-                const float y = m_radius * std::sin(rad);
-                GetOwner()->SetLocalPosition(x, y);
-            }
-            else
-            {
-                const float x = center.GetPosition().x + m_radius * std::cos(rad);
-                const float y = center.GetPosition().y + m_radius * std::sin(rad);
-                GetOwner()->SetLocalPosition(x, y);
-            }
-            
-
-            
+            const float x = m_radius * std::cos(rad);
+            const float y = m_radius * std::sin(rad);
+            GetOwner()->SetLocalPosition(x, y);
         }
 
         void Render() override {}
 
     private:
-
-        Transform GetRotationCenter() const
-        {
-            GameObject* parent = GetOwner()->GetParent();
-            if (parent)
-            {
-				return parent->GetWorldPosition(); // if parent, use parent's world position as center
-            }
-
-			return m_center; // no parent, use initial location as center
-        }
         float m_speed;  // degrees per update
         float m_radius; // distance from parent
         float m_angle;  // current rotation angle
-        Transform m_center; // center for rotation
     };
 }

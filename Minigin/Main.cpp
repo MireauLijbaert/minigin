@@ -77,19 +77,24 @@ static void load()
 	fpsObject->SetLocalPosition(20, 50);
 	scene.Add(std::move(fpsObject));
 
-	// ---------- Player 1 (rotation test, orbits around set location) ----------
+
+	// ---------- Center (rotation test, a gameobject that acts as the center of player 1) ----------
+	auto center = std::make_unique<dae::GameObject>();
+	center->SetLocalPosition(512, 288); // Set local position to center of screen, player 1 will rotate around this point
+
+
+	// ---------- Player 1 (rotation test) ----------
 	auto player1 = std::make_unique<dae::GameObject>();
-	player1->SetLocalPosition(512, 288); // Set local position to center of screen, rotation component will rotate around this point
 	// Add render component and set texture
 	auto render1 = std::make_unique<dae::RenderComponent>(*player1);
 	render1->SetTexture("RedPengo.png");
 	player1->AddComponent(std::move(render1));
+	// Set Player1 as parent so it orbits correctly
+	player1->SetParent(center.get(), false);
 
 	// Add rotation component (radius, speed)
 	auto rot1 = std::make_unique<dae::RotationComponent>(*player1, 0.5f, 100.f);
 	player1->AddComponent(std::move(rot1));
-
-	
 
 	// ---------- Player 2 (rotation test, orbits around player 1 ) ----------
 	auto player2 = std::make_unique<dae::GameObject>();
@@ -106,6 +111,7 @@ static void load()
 	auto rot2 = std::make_unique<dae::RotationComponent>(*player2, -1.f, 100.f);
 	player2->AddComponent(std::move(rot2));
 
+	scene.Add(std::move(center));
 	scene.Add(std::move(player1));
 	scene.Add(std::move(player2));
 }
