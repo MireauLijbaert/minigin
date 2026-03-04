@@ -27,7 +27,7 @@ add_executable(${TARGET_NAME} ${TARGET_PARAM}
   
   Minigin/Texture2D.cpp
   Minigin/Transform.cpp
- "Minigin/BaseComponent.h" "Minigin/RenderComponent.h" "Minigin/RenderComponent.cpp" "Minigin/TextComponent.h" "Minigin/TextComponent.cpp" "Minigin/FPSComponent.h" "Minigin/FPSComponent.cpp" "Minigin/TimeSingleton.h" "Minigin/RotationComponent.h")
+ "Minigin/BaseComponent.h" "Minigin/RenderComponent.h" "Minigin/RenderComponent.cpp" "Minigin/TextComponent.h" "Minigin/TextComponent.cpp" "Minigin/FPSComponent.h" "Minigin/FPSComponent.cpp" "Minigin/TimeSingleton.h" "Minigin/RotationComponent.h" "Minigin/BenchmarkComponent.h" "Minigin/BenchmarkComponent.cpp")
 
 # enable c++20 features
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_20)
@@ -128,15 +128,6 @@ target_link_libraries(imgui PUBLIC SDL3::SDL3)
 # enable c++20 features
 target_compile_features(imgui PUBLIC cxx_std_20)
 
-# imgui plotting extension
-FetchContent_Declare(
-  imgui_plot
-  GIT_REPOSITORY https://github.com/soulthreads/imgui-plot.git
-  GIT_TAG v0.1.0
-  EXCLUDE_FROM_ALL
-)
-FetchContent_MakeAvailable(imgui_plot)
-
 if (WIN32)
   # Add VLD (Visual Leak Detector) for memory leak detection on Windows
   find_package(VLD CONFIG)
@@ -161,7 +152,6 @@ target_link_libraries("${TARGET_NAME}" PUBLIC
   SDL3_ttf::SDL3_ttf
   glm::glm
   imgui
-  imgui_plot
   ${VLD_LIBRARIES}
 )
 

@@ -15,6 +15,7 @@
 #include "RenderComponent.h"
 // temporary for testing
 #include "RotationComponent.h"
+#include "BenchmarkComponent.h"
 
 #include "Renderer.h"
 
@@ -77,43 +78,12 @@ static void load()
 	fpsObject->SetLocalPosition(20, 50);
 	scene.Add(std::move(fpsObject));
 
+	// ---------- Benchmark Object ----------
+	auto benchmarkObject = std::make_unique<dae::GameObject>();
+	auto benchmarkComponent = std::make_unique<dae::BenchmarkComponent>(*benchmarkObject);
+	benchmarkObject->AddComponent(std::move(benchmarkComponent));
+	scene.Add(std::move(benchmarkObject));
 
-	// ---------- Center (rotation test, a gameobject that acts as the center of player 1) ----------
-	auto center = std::make_unique<dae::GameObject>();
-	center->SetLocalPosition(512, 288); // Set local position to center of screen, player 1 will rotate around this point
-
-
-	// ---------- Player 1 (rotation test) ----------
-	auto player1 = std::make_unique<dae::GameObject>();
-	// Add render component and set texture
-	auto render1 = std::make_unique<dae::RenderComponent>(*player1);
-	render1->SetTexture("RedPengo.png");
-	player1->AddComponent(std::move(render1));
-	// Set Player1 as parent so it orbits correctly
-	player1->SetParent(center.get(), false);
-
-	// Add rotation component (radius, speed)
-	auto rot1 = std::make_unique<dae::RotationComponent>(*player1, 0.5f, 100.f);
-	player1->AddComponent(std::move(rot1));
-
-	// ---------- Player 2 (rotation test, orbits around player 1 ) ----------
-	auto player2 = std::make_unique<dae::GameObject>();
-
-	// Add render component and set texture
-	auto render2 = std::make_unique<dae::RenderComponent>(*player2);
-	render2->SetTexture("PinkPengo.png");
-	player2->AddComponent(std::move(render2));
-
-	// Set Player1 as parent so it orbits correctly
-	player2->SetParent(player1.get(), false);
-
-	// Add rotation component
-	auto rot2 = std::make_unique<dae::RotationComponent>(*player2, -1.f, 100.f);
-	player2->AddComponent(std::move(rot2));
-
-	scene.Add(std::move(center));
-	scene.Add(std::move(player1));
-	scene.Add(std::move(player2));
 }
 
 int main(int, char*[]) {
