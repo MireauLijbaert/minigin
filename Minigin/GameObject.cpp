@@ -157,5 +157,8 @@ void dae::GameObject::UpdateWorldPosition()
 void dae::GameObject::SetPositionDirty()
 {
 	m_isPositionDirty = true;
+	for (auto child : m_children)
+	{
+		child->SetPositionDirty();
+	}
 }
-

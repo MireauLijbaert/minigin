@@ -12,15 +12,10 @@ void Scene::Add(std::unique_ptr<GameObject> object)
 void Scene::Remove(GameObject& object)
 {
 	object.MarkForRemoval();
-	
-	/*m_objects.erase(
-		std::remove_if(
-			m_objects.begin(),
-			m_objects.end(),
-			[&object](const auto& ptr) { return ptr.get() == &object; }
-		),
-		m_objects.end()
-	);*/
+	for (int i = 0; i < object.GetChildCount(); ++i)
+	{
+		object.GetChildAt(i)->MarkForRemoval();
+	}
 }
 
 void Scene::RemoveAll()

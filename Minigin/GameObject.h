@@ -57,22 +57,22 @@ namespace dae
 		std::vector<std::unique_ptr<BaseComponent>> m_components{};
 		bool m_markedForRemoval{ false };
 
-		// Parent-Child Members
-		GameObject* m_parent{ nullptr };
-		std::vector<GameObject*> m_children{};
-
 		// Position Members
 		bool m_isPositionDirty{ false };
 		Transform m_localPosition{};
 		Transform m_worldPosition{};
 
-		// Private Parent-Child Functions
-		void AddChild(GameObject* child);
-		void RemoveChild(GameObject* child);
+		// Parent-Child Members
+		GameObject* m_parent{ nullptr };
+		std::vector<GameObject*> m_children{};
 
 		// Private Position Functions
 		void UpdateWorldPosition();
 		void SetPositionDirty();
+
+		// Private Parent-Child Functions
+		void AddChild(GameObject* child);
+		void RemoveChild(GameObject* child);
 	};
 }
 
