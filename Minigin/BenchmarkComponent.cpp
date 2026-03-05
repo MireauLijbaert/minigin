@@ -55,7 +55,7 @@ void dae::BenchmarkComponent::Render()
 std::vector<DataPoint> dae::BenchmarkComponent::RunIntBufferTest()
 {
     std::vector<DataPoint> results;
-    const size_t bufferSize = 100;
+    const size_t bufferSize = 1'000'000;
     std::vector<int> buffer(bufferSize, 1);
 
     for (int step = 1; step <= 1024; step *= 2)
@@ -75,7 +75,7 @@ std::vector<DataPoint> dae::BenchmarkComponent::RunIntBufferTest()
 std::vector<DataPoint> dae::BenchmarkComponent::RunGameObject3DTest()
 {
     std::vector<DataPoint> results;
-    const size_t count = 100;
+    const size_t count = 1'000'000;
     std::vector<GameObject3D> objects(count);
 
     for (int step = 1; step <= 1024; step *= 2)
@@ -95,7 +95,7 @@ std::vector<DataPoint> dae::BenchmarkComponent::RunGameObject3DTest()
 std::vector<DataPoint> dae::BenchmarkComponent::RunGameObject3DAltTest()
 {
     std::vector<DataPoint> results;
-    const size_t count = 100;
+    const size_t count = 1'000'000;
     GameObject3DAlt objects(count);
 
     for (int step = 1; step <= 1024; step *= 2)
