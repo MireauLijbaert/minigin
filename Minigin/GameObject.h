@@ -39,6 +39,7 @@ namespace dae
 		// Position management
 		void SetLocalPosition(float x, float y);
 		void SetLocalPosition(const Transform& localPosition);
+		void SetLocalPosition(const glm::vec3& localPosition);
 		Transform GetLocalPosition() const;
 		Transform GetWorldPosition();
 

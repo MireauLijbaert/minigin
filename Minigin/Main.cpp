@@ -78,12 +78,6 @@ static void load()
 	fpsObject->SetLocalPosition(20, 50);
 	scene.Add(std::move(fpsObject));
 
-	// ---------- Benchmark Object ----------
-	auto benchmarkObject = std::make_unique<dae::GameObject>();
-	auto benchmarkComponent = std::make_unique<dae::BenchmarkComponent>(*benchmarkObject);
-	benchmarkObject->AddComponent(std::move(benchmarkComponent));
-	scene.Add(std::move(benchmarkObject));
-
 }
 
 int main(int, char*[]) {

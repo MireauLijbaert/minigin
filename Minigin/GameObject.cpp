@@ -99,7 +99,11 @@ void dae::GameObject::SetLocalPosition(float x, float y)
 void dae::GameObject::SetLocalPosition(const Transform& localPosition)
 {
 	SetLocalPosition(localPosition.GetPosition().x, localPosition.GetPosition().y);
-	SetPositionDirty();
+}
+
+void dae::GameObject::SetLocalPosition(const glm::vec3& localPosition)
+{
+	SetLocalPosition(localPosition.x, localPosition.y);
 }
 
 dae::Transform dae::GameObject::GetLocalPosition() const

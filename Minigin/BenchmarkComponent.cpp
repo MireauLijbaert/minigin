@@ -89,7 +89,7 @@ std::vector<DataPoint> dae::BenchmarkComponent::RunGameObject3DTest()
         results.push_back({ float(step), duration });
     }
 
-    return results;
+    return results; 
 }
 
 std::vector<DataPoint> dae::BenchmarkComponent::RunGameObject3DAltTest()
