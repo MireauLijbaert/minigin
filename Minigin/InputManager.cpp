@@ -72,7 +72,7 @@ public:
 				WORD previousButtonState = m_previousButtons[i];
 
 				// HELD
-				for (const auto& binding : m_gamepadCommandsHeld)
+				for (const auto& binding : m_gamepadCommandsHeld[i])
 				{
 					if (buttonState & binding.first)
 					{
@@ -82,7 +82,7 @@ public:
 
 				// DOWN
 
-				for (const auto& binding : m_gamepadCommandsDown)
+				for (const auto& binding : m_gamepadCommandsDown[i])
 				{
 					bool isPressed = (buttonState & binding.first) != 0; // !=0 checks if the button is currently pressed (if bit is 0 then it's not pressed)
 					bool wasPressed = (previousButtonState & binding.first) != 0;
@@ -94,7 +94,7 @@ public:
 				}
 
 				// UP
-				for (const auto& binding : m_gamepadCommandsUp)
+				for (const auto& binding : m_gamepadCommandsUp[i])
 				{
 					bool isPressed = (buttonState & binding.first) != 0; // !=0 checks if the button is currently pressed (if bit is 0 then it's not pressed)
 					bool wasPressed = (previousButtonState & binding.first) != 0;
@@ -135,19 +135,19 @@ public:
 	}
 
 	// Use WORD here, the uint16_t automatically conversts to WORD, no casting needed
-	void BindGamepadInput(WORD button, std::unique_ptr<Command> command, InputState inputState)
+	void BindGamepadInput(WORD button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
 	{
 		if (inputState == InputState::Up)
 		{
-			m_gamepadCommandsUp[button] = std::move(command);
+			m_gamepadCommandsUp[gamepadIndex][button] = std::move(command);
 		}
 		else if (inputState == InputState::Down)
 		{
-			m_gamepadCommandsDown[button] = std::move(command);
+			m_gamepadCommandsDown[gamepadIndex][button] = std::move(command);
 		}
 		else if (inputState == InputState::Held)
 		{
-			m_gamepadCommandsHeld[button] = std::move(command);
+			m_gamepadCommandsHeld[gamepadIndex][button] = std::move(command);
 		}
 	}
 
@@ -158,10 +158,10 @@ private:
 	std::unordered_map<SDL_Scancode, std::unique_ptr<Command>> m_keyboardCommandsDown{};
 	std::unordered_map<SDL_Scancode, std::unique_ptr<Command>> m_keyboardCommandsHeld{};
 	
-	// 3 different states for gamepad
-	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsUp{};
-	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsDown{};
-	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsHeld{};
+	// 3 different states for gamepad, in an array for maximum USER_MAX_COUNT (4 right now) gamepads
+	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsUp[XUSER_MAX_COUNT]{};
+	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsDown[XUSER_MAX_COUNT]{};
+	std::unordered_map<WORD, std::unique_ptr<Command>> m_gamepadCommandsHeld[XUSER_MAX_COUNT]{};
 
 	// Remember the previous button states to be able to determine if a button was just pressed, just released or is being held down
 	WORD m_previousButtons[XUSER_MAX_COUNT]{};
@@ -184,7 +184,7 @@ void dae::InputManager::BindKeyboardInput(SDL_Scancode key, std::unique_ptr<Comm
 	pImpl->BindKeyboardInput(key, std::move(command), inputState);
 }
 
-void dae::InputManager::BindGamepadInput(uint16_t button, std::unique_ptr<Command> command, InputState inputState)
+void dae::InputManager::BindGamepadInput(uint16_t button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
 {
-	pImpl->BindGamepadInput(button, std::move(command), inputState);
+	pImpl->BindGamepadInput(button, std::move(command), inputState, gamepadIndex);
 }
