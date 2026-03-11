@@ -1,21 +1,15 @@
-#pragma once
+#include "Commands.h"
+#include "MovementComponent.h"
 
-namespace dae
+void dae::MovementCommand::Execute()
 {
-	class Command
+	if (m_actor)
 	{
-	public:
-		virtual ~Command() = default;
-		virtual void Execute() = 0;
-	};
-
-	class MovementCommand : public Command
-	{
-	public: 
-		void Execute() override
+		MovementComponent* movementComponent = m_actor->GetComponent<MovementComponent>();
+		if (movementComponent)
 		{
-			// Implement movement logic here
+			movementComponent->Move(m_direction);
 		}
-	};
-
+	}
 }
+
