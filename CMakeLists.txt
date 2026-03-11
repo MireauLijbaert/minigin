@@ -153,6 +153,7 @@ target_link_libraries("${TARGET_NAME}" PUBLIC
   glm::glm
   imgui
   ${VLD_LIBRARIES}
+  Xinput9_1_0
 )
 
 if(MSVC)
