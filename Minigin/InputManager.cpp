@@ -137,6 +137,11 @@ public:
 	// Use WORD here, the uint16_t automatically conversts to WORD, no casting needed
 	void BindGamepadInput(WORD button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
 	{
+		if (gamepadIndex >= XUSER_MAX_COUNT)
+		{
+			// Invalid gamepad index
+			return;
+		}
 		if (inputState == InputState::Up)
 		{
 			m_gamepadCommandsUp[gamepadIndex][button] = std::move(command);
