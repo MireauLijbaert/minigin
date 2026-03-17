@@ -15,12 +15,8 @@
 #include "FPSComponent.h"
 #include "TextComponent.h"
 #include "RenderComponent.h"
-#include "MovementComponent.h"
 #include "Commands.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
-#include "Xinput.h"
 // temporary for testing
 #include "RotationComponent.h"
 #include "BenchmarkComponent.h"
@@ -146,25 +142,25 @@ static void load()
     //
 	
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_UP,
+        dae::GamepadButton::DPadUp,
         std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_LEFT,
+        dae::GamepadButton::DPadLeft,
         std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_DOWN,
+        dae::GamepadButton::DPadDown,
         std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_RIGHT,
+        dae::GamepadButton::DPadRight,
         std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held,
         1
@@ -199,25 +195,25 @@ static void load()
     // Player 2 - Gamepad 1 (index 0), D-pad
     //
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_UP,
+        dae::GamepadButton::DPadUp,
         std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_LEFT,
+        dae::GamepadButton::DPadLeft,
         std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_DOWN,
+        dae::GamepadButton::DPadDown,
         std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );  
     input.BindGamepadInput(
-        XINPUT_GAMEPAD_DPAD_RIGHT,
+        dae::GamepadButton::DPadRight,
         std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held,
         0

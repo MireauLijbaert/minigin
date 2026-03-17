@@ -189,7 +189,7 @@ void dae::InputManager::BindKeyboardInput(SDL_Scancode key, std::unique_ptr<Comm
 	pImpl->BindKeyboardInput(key, std::move(command), inputState);
 }
 
-void dae::InputManager::BindGamepadInput(uint16_t button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
+void dae::InputManager::BindGamepadInput(GamepadButton button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
 {
-	pImpl->BindGamepadInput(button, std::move(command), inputState, gamepadIndex);
+	pImpl->BindGamepadInput(static_cast<WORD>(button), std::move(command), inputState, gamepadIndex);
 }
