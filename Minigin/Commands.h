@@ -13,11 +13,12 @@ namespace dae
 	class MovementCommand : public Command
 	{
 	public:
-		MovementCommand(GameObject& actor, const glm::vec3& direction) : m_actor(&actor), m_direction(direction) {}
+		MovementCommand(GameObject& actor, const glm::vec3& direction, const float speed) : m_actor(&actor), m_direction(direction), m_speed(speed) {}
 		void Execute() override;
 	private:
 		GameObject* m_actor;
 		glm::vec3 m_direction;
+		float m_speed;
 	};
 
 }

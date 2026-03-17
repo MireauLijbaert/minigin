@@ -94,10 +94,6 @@ static void load()
     player1RenderPtr->SetTexture("RedPengo.png");
     player1->SetLocalPosition(200.f, 300.f);
 
-    // Player 1 moves at normal speed
-    auto player1Movement = std::make_unique<dae::MovementComponent>(*player1, 100.f);
-    player1->AddComponent(std::move(player1Movement));
-
     // Keep raw pointer before moving into scene so commands can reference the object
     dae::GameObject* player1Ptr = player1.get();
 
@@ -112,10 +108,6 @@ static void load()
     player2RenderPtr->SetTexture("PinkPengo.png");
     player2->SetLocalPosition(500.f, 300.f);
 
-    // Player 2 moves at double speed
-    auto player2Movement = std::make_unique<dae::MovementComponent>(*player2, 200.f);
-    player2->AddComponent(std::move(player2Movement));
-
     dae::GameObject* player2Ptr = player2.get();
 
     scene.Add(std::move(player2));
@@ -127,51 +119,53 @@ static void load()
     //
     // Player 1 - Keyboard WASD
     //
+	float speed1 = 100.f; // Player 1 moves at normal speed
     input.BindKeyboardInput(
         SDL_SCANCODE_W,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, -1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed1),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_A,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ -1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_S,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, 1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed1),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_D,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held
     );
 
     //
     // Player 1 - Gamepad 2 (index 1), D-pad
     //
+	
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_UP,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, -1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_LEFT,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ -1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_DOWN,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, 1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_RIGHT,
-        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player1Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed1),
         dae::InputState::Held,
         1
     );
@@ -179,24 +173,25 @@ static void load()
     //
     // Player 2 - Keyboard IJKL (for testing)
     //
+    float speed2 = 200.f; // Player 2 moves at double speed
     input.BindKeyboardInput(
         SDL_SCANCODE_I,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, -1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed2),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_J,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ -1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_K,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, 1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed2),
         dae::InputState::Held
     );
     input.BindKeyboardInput(
         SDL_SCANCODE_L,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held
     );
 
@@ -205,25 +200,25 @@ static void load()
     //
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_UP,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, -1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, -1.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_LEFT,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ -1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ -1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_DOWN,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, 1.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 0.f, 1.f, 0.f }, speed2),
         dae::InputState::Held,
         0
-    );
+    );  
     input.BindGamepadInput(
         XINPUT_GAMEPAD_DPAD_RIGHT,
-        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }),
+        std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held,
         0
     );
