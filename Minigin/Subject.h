@@ -1,17 +1,19 @@
 #pragma once
 #include <vector>
-
-class Observer;
-class Event;
-class GameObject;
-
-class Subject
+namespace dae
 {
-public:
-    void AddObserver(Observer* observer);
-    void RemoveObserver(Observer* observer);
-    void NotifyObservers(const Event& event, GameObject* actor);
+    class Observer;
+    struct Event;
+    class GameObject;
 
-private:
-    std::vector<Observer*> m_Observers{};
-};
+    class Subject
+    {
+    public:
+        void AddObserver(Observer* observer);
+        void RemoveObserver(Observer* observer);
+        void NotifyObservers(const Event& event, GameObject* actor);
+
+    private:
+        std::vector<Observer*> m_Observers{};
+    };
+}

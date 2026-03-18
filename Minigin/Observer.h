@@ -1,9 +1,12 @@
-class Event;
-class GameObject;
-
-class Observer
+namespace dae
 {
-public:
-	virtual ~Observer() = default;
-	virtual void Notify(const Event& event, GameObject* actor) = 0;
-};
+	struct Event;
+	class GameObject;
+
+	class Observer
+	{
+	public:
+		virtual ~Observer() = default;
+		virtual void Notify(const Event& event, GameObject* actor) = 0;
+	};
+}

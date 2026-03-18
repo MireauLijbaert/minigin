@@ -2,7 +2,7 @@
 #include "Observer.h"
 #include <algorithm>
 
-void Subject::AddObserver(Observer* observer)
+void dae::Subject::AddObserver(Observer* observer)
 {
     if (!observer) return;
 
@@ -12,7 +12,7 @@ void Subject::AddObserver(Observer* observer)
     }
 }
 
-void Subject::RemoveObserver(Observer* observer)
+void dae::Subject::RemoveObserver(Observer* observer)
 {
     m_Observers.erase(
         std::remove(m_Observers.begin(), m_Observers.end(), observer),
@@ -20,7 +20,7 @@ void Subject::RemoveObserver(Observer* observer)
     );
 }
 
-void Subject::NotifyObservers(const Event& event, GameObject* actor)
+void dae::Subject::NotifyObservers(const Event& event, GameObject* actor)
 {
     for (Observer* observer : m_Observers)
     {
