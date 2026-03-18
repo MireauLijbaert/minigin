@@ -23,7 +23,7 @@ void dae::HealthComponent::TakeDamage(int damage)
 
 	// 
 	Event event{ "LifeChanged" };
-
+	event.nbArgs = 1;
 	event.args[0] = EventArg{ .intValue = m_CurrentHealth };
 
 	m_Subject.NotifyObservers(event, GetOwner());
@@ -38,8 +38,10 @@ void dae::HealthComponent::Heal(int healAmount)
 		m_CurrentHealth = m_MaxHealth;
 	}
 
-	// Fire same event (UI just cares that it changed)
+
 	Event event{ "LifeChanged" };
+	event.nbArgs = 1;
+	event.args[0].intValue = m_CurrentHealth;
 
 	m_Subject.NotifyObservers(event, GetOwner());
 }

@@ -17,6 +17,11 @@
 #include "RenderComponent.h"
 #include "Commands.h"
 
+#include "HealthComponent.h"
+#include "HealthDisplayComponent.h"
+#include "ScoreComponent.h"
+#include "ScoreDisplayComponent.h"
+
 // temporary for testing
 #include "RotationComponent.h"
 #include "BenchmarkComponent.h"
@@ -87,6 +92,12 @@ static void load()
     auto player1Render = std::make_unique<dae::RenderComponent>(*player1);
     auto player1RenderPtr = player1Render.get();
     player1->AddComponent(std::move(player1Render));
+    auto player1Health = std::make_unique<dae::HealthComponent>(*player1, 3);
+    auto player1HealthPtr = player1Health.get();
+    player1->AddComponent(std::move(player1Health));
+    auto player1Score = std::make_unique<dae::ScoreComponent>(*player1);
+    auto player1ScorePtr = player1Score.get();
+    player1->AddComponent(std::move(player1Score));
     player1RenderPtr->SetTexture("RedPengo.png");
     player1->SetLocalPosition(200.f, 300.f);
 
@@ -101,6 +112,12 @@ static void load()
     auto player2Render = std::make_unique<dae::RenderComponent>(*player2);
     auto player2RenderPtr = player2Render.get();
     player2->AddComponent(std::move(player2Render));
+    auto player2Health = std::make_unique<dae::HealthComponent>(*player2, 3);
+    auto player2HealthPtr = player2Health.get();
+    player2->AddComponent(std::move(player2Health));
+    auto player2Score = std::make_unique<dae::ScoreComponent>(*player2);
+    auto player2ScorePtr = player2Score.get();
+    player2->AddComponent(std::move(player2Score));
     player2RenderPtr->SetTexture("PinkPengo.png");
     player2->SetLocalPosition(500.f, 300.f);
 
@@ -108,6 +125,132 @@ static void load()
 
     scene.Add(std::move(player2));
 
+    // ---------- Player 1 Lives Display ----------
+    auto player1LivesObject = std::make_unique<dae::GameObject>();
+
+    auto player1LivesRender = std::make_unique<dae::RenderComponent>(*player1LivesObject);
+    auto player1LivesRenderPtr = player1LivesRender.get();
+    player1LivesObject->AddComponent(std::move(player1LivesRender));
+
+    auto livesFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
+
+    auto player1LivesText = std::make_unique<dae::TextComponent>(
+        *player1LivesObject,
+        player1LivesRenderPtr,
+        "Lives: 3",
+        livesFont
+    );
+    auto player1LivesTextPtr = player1LivesText.get();
+    player1LivesObject->AddComponent(std::move(player1LivesText));
+
+    auto player1LivesDisplay = std::make_unique<dae::HealthDisplayComponent>(
+        *player1LivesObject,
+        &player1HealthPtr->GetSubject(),
+        player1LivesTextPtr
+    );
+    player1LivesObject->AddComponent(std::move(player1LivesDisplay));
+
+    player1LivesObject->SetLocalPosition(20.f, 90.f);
+    scene.Add(std::move(player1LivesObject));
+
+    // ---------- Player 1 Score Display ----------
+    auto player1ScoreObject = std::make_unique<dae::GameObject>();
+
+    auto player1ScoreRender = std::make_unique<dae::RenderComponent>(*player1ScoreObject);
+    auto player1ScoreRenderPtr = player1ScoreRender.get();
+    player1ScoreObject->AddComponent(std::move(player1ScoreRender));
+
+    auto player1ScoreText = std::make_unique<dae::TextComponent>(
+        *player1ScoreObject,
+        player1ScoreRenderPtr,
+        "Score: " + std::to_string(player1ScorePtr->GetScore()),
+        livesFont
+    );
+    auto player1ScoreTextPtr = player1ScoreText.get();
+    player1ScoreObject->AddComponent(std::move(player1ScoreText));
+
+    auto player1ScoreDisplay = std::make_unique<dae::ScoreDisplayComponent>(
+        *player1ScoreObject,
+        &player1ScorePtr->GetSubject(),
+        player1ScoreTextPtr
+    );
+    player1ScoreObject->AddComponent(std::move(player1ScoreDisplay));
+
+    player1ScoreObject->SetLocalPosition(20.f, 150.f);
+    scene.Add(std::move(player1ScoreObject));
+
+    // ---------- Player 2 Lives Display ----------
+    auto player2LivesObject = std::make_unique<dae::GameObject>();
+
+    auto player2LivesRender = std::make_unique<dae::RenderComponent>(*player2LivesObject);
+    auto player2LivesRenderPtr = player2LivesRender.get();
+    player2LivesObject->AddComponent(std::move(player2LivesRender));
+
+    auto player2LivesText = std::make_unique<dae::TextComponent>(
+        *player2LivesObject,
+        player2LivesRenderPtr,
+        "Lives: 3",
+        livesFont
+    );
+    auto player2LivesTextPtr = player2LivesText.get();
+    player2LivesObject->AddComponent(std::move(player2LivesText));
+
+    auto player2LivesDisplay = std::make_unique<dae::HealthDisplayComponent>(
+        *player2LivesObject,
+        &player2HealthPtr->GetSubject(),
+        player2LivesTextPtr
+    );
+    player2LivesObject->AddComponent(std::move(player2LivesDisplay));
+
+    player2LivesObject->SetLocalPosition(20.f, 120.f);
+    scene.Add(std::move(player2LivesObject));
+
+    // ---------- Player 2 Score Display ----------
+    auto player2ScoreObject = std::make_unique<dae::GameObject>();
+
+    auto player2ScoreRender = std::make_unique<dae::RenderComponent>(*player2ScoreObject);
+    auto player2ScoreRenderPtr = player2ScoreRender.get();
+    player2ScoreObject->AddComponent(std::move(player2ScoreRender));
+
+    auto player2ScoreText = std::make_unique<dae::TextComponent>(
+        *player2ScoreObject,
+        player2ScoreRenderPtr,
+        "Score: " + std::to_string(player2ScorePtr->GetScore()),
+        livesFont
+    );
+    auto player2ScoreTextPtr = player2ScoreText.get();
+    player2ScoreObject->AddComponent(std::move(player2ScoreText));
+
+    auto player2ScoreDisplay = std::make_unique<dae::ScoreDisplayComponent>(
+        *player2ScoreObject,
+        &player2ScorePtr->GetSubject(),
+        player2ScoreTextPtr
+    );
+    player2ScoreObject->AddComponent(std::move(player2ScoreDisplay));
+
+    player2ScoreObject->SetLocalPosition(20.f, 180.f);
+    scene.Add(std::move(player2ScoreObject));
+
+    // ---------- Controls Text ----------
+    auto controlsObject = std::make_unique<dae::GameObject>();
+
+    auto controlsRender = std::make_unique<dae::RenderComponent>(*controlsObject);
+    auto controlsRenderPtr = controlsRender.get();
+    controlsObject->AddComponent(std::move(controlsRender));
+
+    auto controlsFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 16);
+
+    auto controlsText = std::make_unique<dae::TextComponent>(
+        *controlsObject,
+        controlsRenderPtr,
+        "P1 Move: WASD / Gamepad 2 DPad | P1 Damage: E | P1 Score: R |"
+        "P2 Move: IJKL / Gamepad 1 DPad | P2 Damage: O | P2 Score: P",
+        controlsFont
+    );
+    controlsObject->AddComponent(std::move(controlsText));
+
+    controlsObject->SetLocalPosition(20.f, 550.f);
+    scene.Add(std::move(controlsObject));
 
     // ---------- Input Bindings ----------
     auto& input = dae::InputManager::GetInstance();
@@ -217,6 +360,38 @@ static void load()
         std::make_unique<dae::MovementCommand>(*player2Ptr, glm::vec3{ 1.f, 0.f, 0.f }, speed2),
         dae::InputState::Held,
         0
+    );
+
+    // ---------- Damage Test Bindings ----------
+
+// Player 1 takes damage with E
+    input.BindKeyboardInput(
+        SDL_SCANCODE_E,
+        std::make_unique<dae::TakeDamageCommand>(*player1Ptr, 1),
+        dae::InputState::Down
+    );
+
+    // Player 2 takes damage with O
+    input.BindKeyboardInput(
+        SDL_SCANCODE_O,
+        std::make_unique<dae::TakeDamageCommand>(*player2Ptr, 1),
+        dae::InputState::Down
+    );
+
+    // ---------- Score Test Bindings ----------
+
+    // Player 1 gains score with R
+    input.BindKeyboardInput(
+        SDL_SCANCODE_R,
+        std::make_unique<dae::IncreaseScoreCommand>(*player1Ptr, 100),
+        dae::InputState::Down
+    );
+
+    // Player 2 gains score with P
+    input.BindKeyboardInput(
+        SDL_SCANCODE_P,
+        std::make_unique<dae::IncreaseScoreCommand>(*player2Ptr, 100),
+        dae::InputState::Down
     );
 
 }

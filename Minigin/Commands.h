@@ -21,4 +21,35 @@ namespace dae
 		float m_speed;
 	};
 
+	// Temporary for taking damage with button press
+	class TakeDamageCommand final : public Command
+	{
+	public:
+		explicit TakeDamageCommand(GameObject& actor, int damage = 1)
+			: m_Actor{ actor }
+			, m_Damage{ damage }
+		{}
+
+		void Execute() override;
+
+	private:
+		GameObject& m_Actor;
+		int m_Damage;
+	};
+
+	// Temporary for increasing score with button press
+	class IncreaseScoreCommand final : public Command
+	{
+	public:
+		explicit IncreaseScoreCommand(GameObject& actor, int amount = 100)
+			: m_Actor{ actor }
+			, m_Amount{ amount }
+		{}
+
+		void Execute() override;
+
+	private:
+		GameObject& m_Actor;
+		int m_Amount;
+	};
 }

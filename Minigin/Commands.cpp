@@ -1,5 +1,7 @@
 #include "Commands.h"
 #include "TimeSingleton.h"
+#include "HealthComponent.h"
+#include "ScoreComponent.h"
 
 void dae::MovementCommand::Execute()
 {
@@ -8,3 +10,20 @@ void dae::MovementCommand::Execute()
 	m_actor->SetLocalPosition(m_actor->GetLocalPosition().GetPosition() + m_direction); // Update the owner's position by adding the movement vector to the current position.
 }
 
+void dae::TakeDamageCommand::Execute()
+{
+	auto health = m_Actor.GetComponent<HealthComponent>();
+	if (health)
+	{
+		health->TakeDamage(m_Damage);
+	}
+}
+
+void dae::IncreaseScoreCommand::Execute()
+{
+	auto score = m_Actor.GetComponent<ScoreComponent>();
+	if (score)
+	{
+		score->AddScore(m_Amount);
+	}
+}

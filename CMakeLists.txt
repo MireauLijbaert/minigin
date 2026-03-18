@@ -27,7 +27,7 @@ add_executable(${TARGET_NAME} ${TARGET_PARAM}
   
   Minigin/Texture2D.cpp
   Minigin/Transform.cpp
- "Minigin/BaseComponent.h" "Minigin/RenderComponent.h" "Minigin/RenderComponent.cpp" "Minigin/TextComponent.h" "Minigin/TextComponent.cpp" "Minigin/FPSComponent.h" "Minigin/FPSComponent.cpp" "Minigin/TimeSingleton.h" "Minigin/RotationComponent.h" "Minigin/BenchmarkComponent.h" "Minigin/BenchmarkComponent.cpp" "Minigin/Commands.h" "Minigin/Commands.cpp"  "Minigin/Observer.h" "Minigin/Event.h" "Minigin/Subject.h" "Minigin/Subject.cpp" "Minigin/HealthComponent.h" "Minigin/HealthComponent.cpp")
+ "Minigin/BaseComponent.h" "Minigin/RenderComponent.h" "Minigin/RenderComponent.cpp" "Minigin/TextComponent.h" "Minigin/TextComponent.cpp" "Minigin/FPSComponent.h" "Minigin/FPSComponent.cpp" "Minigin/TimeSingleton.h" "Minigin/RotationComponent.h" "Minigin/BenchmarkComponent.h" "Minigin/BenchmarkComponent.cpp" "Minigin/Commands.h" "Minigin/Commands.cpp"  "Minigin/Observer.h" "Minigin/Event.h" "Minigin/Subject.h" "Minigin/Subject.cpp" "Minigin/HealthComponent.h" "Minigin/HealthComponent.cpp" "Minigin/HealthDisplayComponent.h" "Minigin/HealthDisplayComponent.cpp" "Minigin/ScoreComponent.h" "Minigin/ScoreComponent.cpp" "Minigin/ScoreDisplayComponent.h" "Minigin/ScoreDisplayComponent.cpp")
 
 # enable c++20 features
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_20)
