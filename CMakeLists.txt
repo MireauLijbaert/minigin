@@ -105,12 +105,12 @@ if(NOT SDL3_ttf_FOUND)
 endif()
 
 # Add SDL3_mixer
-find_package(SDL3_mixer 3.0 CONFIG QUIET)
+find_package(SDL3_mixer 3.2.0 CONFIG QUIET)
 if(NOT SDL3_mixer_FOUND)
   if (WIN32)
     FetchContent_Declare(
       SDL3_mixer
-      URL https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.0.0-VC.zip
+      URL https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-VC.zip
       DOWNLOAD_NO_PROGRESS ON
       DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/downloads
     )
@@ -121,7 +121,7 @@ if(NOT SDL3_mixer_FOUND)
     FetchContent_Declare(
       SDL3_mixer
       GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
-      GIT_TAG main # Or a specific release tag if available
+      GIT_TAG release-3.2.0
       GIT_SHALLOW TRUE
       GIT_PROGRESS TRUE
     )
