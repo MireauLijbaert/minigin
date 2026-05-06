@@ -6,6 +6,6 @@ void StateMachine::SetState(std::unique_ptr<BaseState> newState) {
     if (m_CurrentState) m_CurrentState->OnEnter();
 }
 
-void StateMachine::Update(float deltaTime) {
-    if (m_CurrentState) m_CurrentState->Update(deltaTime);
+void StateMachine::Update() {
+    if (m_CurrentState) m_CurrentState->Update();
 }

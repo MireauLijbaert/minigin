@@ -20,8 +20,8 @@ namespace dae
     public:
         explicit PengoControllerComponent(GameObject& owner, float moveSpeed = 100.f, int gamepadIndex = 1, KeyboardScheme keyboard = KeyboardScheme::WASD);
 
-        void Update(float deltaTime);
-        void Render() const {}
+        void Update();
+        void Render() {}
 
         float GetMoveSpeed() const { return m_MoveSpeed; }
 

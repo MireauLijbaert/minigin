@@ -45,6 +45,9 @@ namespace dae
 		// Use uint16_t instead of WORD to avoid including windows.h in this header, will convert it to WORD in the cpp file when needed
 		void BindGamepadInput(GamepadButton button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex);
 
+		bool IsKeyHeld(SDL_Scancode key);
+		bool IsGamepadButtonHeld(GamepadButton button, uint32_t gamepadIndex);
+
 	private:
 		class impl;
 		std::unique_ptr<impl> pImpl;

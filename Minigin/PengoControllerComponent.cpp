@@ -39,9 +39,46 @@ namespace dae
         m_StateMachine.SetState(std::make_unique<PengoIdleState>(*this));
     }
 
-    void PengoControllerComponent::Update(float deltaTime)
+    void PengoControllerComponent::Update()
     {
-        m_StateMachine.Update(deltaTime);
+
+        auto& input = InputManager::GetInstance();
+
+        bool isMoving = false;
+
+        if (m_KeyboardScheme == KeyboardScheme::WASD)
+        {
+            isMoving = input.IsKeyHeld(SDL_SCANCODE_W) ||
+                input.IsKeyHeld(SDL_SCANCODE_A) ||
+                input.IsKeyHeld(SDL_SCANCODE_S) ||
+                input.IsKeyHeld(SDL_SCANCODE_D);
+        }
+        else if (m_KeyboardScheme == KeyboardScheme::IJKL)
+        {
+            isMoving = input.IsKeyHeld(SDL_SCANCODE_I) ||
+                input.IsKeyHeld(SDL_SCANCODE_J) ||
+                input.IsKeyHeld(SDL_SCANCODE_K) ||
+                input.IsKeyHeld(SDL_SCANCODE_L);
+        }
+
+        // also check gamepad if not already moving
+        if (!isMoving)
+        {
+            isMoving = input.IsGamepadButtonHeld(GamepadButton::DPadUp, m_GamepadIndex) ||
+                input.IsGamepadButtonHeld(GamepadButton::DPadDown, m_GamepadIndex) ||
+                input.IsGamepadButtonHeld(GamepadButton::DPadLeft, m_GamepadIndex) ||
+                input.IsGamepadButtonHeld(GamepadButton::DPadRight, m_GamepadIndex);
+        }
+
+        if (!m_StateMachine.IsInState<PengoDyingState>())
+        {
+            if (isMoving)
+                m_StateMachine.SetState(std::make_unique<PengoMovingState>(*this));
+            else
+                m_StateMachine.SetState(std::make_unique<PengoIdleState>(*this));
+        }
+
+        m_StateMachine.Update();
     }
 
     void PengoControllerComponent::Die()

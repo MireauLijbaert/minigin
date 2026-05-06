@@ -156,6 +156,21 @@ public:
 		}
 	}
 
+	// Functionsto check if a key is being held/pressed
+	bool IsKeyHeld(SDL_Scancode key)
+	{
+		const bool* keyboardState = SDL_GetKeyboardState(nullptr);
+		return keyboardState[key];
+	}
+
+	bool IsGamepadButtonHeld(WORD button, uint32_t gamepadIndex)
+	{
+		XINPUT_STATE state{};
+		if (XInputGetState(gamepadIndex, &state) == ERROR_SUCCESS)
+			return (state.Gamepad.wButtons & button) != 0;
+		return false;
+	}
+
 
 private:
 	// 3 different states for keyboard (maybe change this so a vector
@@ -192,4 +207,14 @@ void dae::InputManager::BindKeyboardInput(SDL_Scancode key, std::unique_ptr<Comm
 void dae::InputManager::BindGamepadInput(GamepadButton button, std::unique_ptr<Command> command, InputState inputState, uint32_t gamepadIndex)
 {
 	pImpl->BindGamepadInput(static_cast<WORD>(button), std::move(command), inputState, gamepadIndex);
+}
+
+bool dae::InputManager::IsKeyHeld(SDL_Scancode key)
+{
+	return pImpl->IsKeyHeld(key);
+}
+
+bool dae::InputManager::IsGamepadButtonHeld(GamepadButton button, uint32_t gamepadIndex)
+{
+	return pImpl->IsGamepadButtonHeld(static_cast<WORD>(button), gamepadIndex);
 }
