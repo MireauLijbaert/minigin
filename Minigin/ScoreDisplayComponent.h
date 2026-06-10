@@ -24,6 +24,7 @@ namespace dae
 		void Render() override;
 
 		void Notify(const Event& event, GameObject* actor) override;
+		void OnSubjectDestroyed() override;
 
 	private:
 		Subject* m_pSubject;

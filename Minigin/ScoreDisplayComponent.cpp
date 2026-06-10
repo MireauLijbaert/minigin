@@ -45,4 +45,9 @@ namespace dae
 			}
 		}
 	}
+
+	void ScoreDisplayComponent::OnSubjectDestroyed()
+	{
+		m_pSubject = nullptr;
+	}
 }

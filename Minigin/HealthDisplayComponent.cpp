@@ -45,4 +45,9 @@ namespace dae
 			}
 		}
 	}
+
+	void HealthDisplayComponent::OnSubjectDestroyed()
+	{
+		m_pSubject = nullptr;
+	}
 }

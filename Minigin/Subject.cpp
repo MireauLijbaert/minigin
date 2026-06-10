@@ -2,6 +2,15 @@
 #include "Observer.h"
 #include <algorithm>
 
+dae::Subject::~Subject()
+{
+    for (Observer* observer : m_Observers)
+    {
+        if (observer)
+            observer->OnSubjectDestroyed();
+    }
+}
+
 void dae::Subject::AddObserver(Observer* observer)
 {
     if (!observer) return;

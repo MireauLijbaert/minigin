@@ -9,9 +9,11 @@ namespace dae
     class Subject
     {
     public:
+        ~Subject();
         void AddObserver(Observer* observer);
         void RemoveObserver(Observer* observer);
         void NotifyObservers(const Event& event, GameObject* actor);
+        
 
     private:
         std::vector<Observer*> m_Observers{};
