@@ -5,32 +5,40 @@ if(EMSCRIPTEN)
   message("Using Emscripten!")
 endif()
 
-if(EMSCRIPTEN)
-  set(TARGET_NAME minigin_web)
-  set(TARGET_PARAM )
-else()
-  set(TARGET_NAME minigin)
-  set(TARGET_PARAM WIN32)
-endif()
-
-# list source files here
-add_executable(${TARGET_NAME} ${TARGET_PARAM}
+# Engine static library
+add_library(minigin STATIC
   Minigin/Font.cpp
   Minigin/GameObject.cpp
   Minigin/InputManager.cpp
-  Minigin/Main.cpp
   Minigin/Minigin.cpp
   Minigin/Renderer.cpp
   Minigin/ResourceManager.cpp
   Minigin/Scene.cpp
   Minigin/SceneManager.cpp
-  
   Minigin/Texture2D.cpp
   Minigin/Transform.cpp
- "Minigin/BaseComponent.h" "Minigin/RenderComponent.h" "Minigin/RenderComponent.cpp" "Minigin/TextComponent.h" "Minigin/TextComponent.cpp" "Minigin/FPSComponent.h" "Minigin/FPSComponent.cpp" "Minigin/TimeSingleton.h" "Minigin/RotationComponent.h" "Minigin/BenchmarkComponent.h" "Minigin/BenchmarkComponent.cpp" "Minigin/Commands.h" "Minigin/Commands.cpp"  "Minigin/Observer.h" "Minigin/Event.h" "Minigin/Subject.h" "Minigin/Subject.cpp" "Minigin/HealthComponent.h" "Minigin/HealthComponent.cpp" "Minigin/HealthDisplayComponent.h" "Minigin/HealthDisplayComponent.cpp" "Minigin/ScoreComponent.h" "Minigin/ScoreComponent.cpp" "Minigin/ScoreDisplayComponent.h" "Minigin/ScoreDisplayComponent.cpp" "Minigin/SoundSystem.h" "Minigin/ServiceLocator.h" "Minigin/BaseState.h" "Minigin/StateMachine.h" "Minigin/StateMachine.cpp" "Minigin/PengoStates.h" "Minigin/PengoStates.cpp" "Minigin/PengoControllerComponent.h" "Minigin/PengoControllerComponent.cpp")
+  "Minigin/BaseComponent.h"
+  "Minigin/RenderComponent.h"
+  "Minigin/RenderComponent.cpp"
+  "Minigin/TextComponent.h"
+  "Minigin/TextComponent.cpp"
+  "Minigin/FPSComponent.h"
+  "Minigin/FPSComponent.cpp"
+  "Minigin/TimeSingleton.h"
+  "Minigin/RotationComponent.h"
+  "Minigin/BenchmarkComponent.h"
+  "Minigin/BenchmarkComponent.cpp"
+  "Minigin/Observer.h"
+  "Minigin/Event.h"
+  "Minigin/Subject.h"
+  "Minigin/Subject.cpp"
+  "Minigin/SoundSystem.h"
+  "Minigin/ServiceLocator.h"
+  "Minigin/Singleton.h"
+)
 
 # enable c++20 features
-target_compile_features(${TARGET_NAME} PUBLIC cxx_std_20)
+target_compile_features(minigin PUBLIC cxx_std_20)
 
 include(FetchContent)
 # add glm
@@ -161,7 +169,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/steam")
 find_package(Steamworks QUIET)
 
-target_include_directories("${TARGET_NAME}" PUBLIC
+target_include_directories(minigin PUBLIC
   ${CMAKE_SOURCE_DIR}/Minigin/
   ${glm_SOURCE_DIR}
   ${sdl3_SOURCE_DIR}/include
@@ -172,7 +180,7 @@ target_include_directories("${TARGET_NAME}" PUBLIC
   ${VLD_INCLUDE_DIR}
 )
 
-target_link_libraries("${TARGET_NAME}" PUBLIC
+target_link_libraries(minigin PUBLIC
   SDL3::SDL3
   SDL3_ttf::SDL3_ttf
   SDL3_mixer::SDL3_mixer
@@ -182,10 +190,61 @@ target_link_libraries("${TARGET_NAME}" PUBLIC
   Xinput9_1_0
 )
 
+# Game executable
+if(EMSCRIPTEN)
+  set(TARGET_NAME minigin_web)
+  add_executable(${TARGET_NAME}
+    Minigin/Main.cpp
+    "Minigin/Commands.h"
+    "Minigin/Commands.cpp"
+    "Minigin/BaseState.h"
+    "Minigin/StateMachine.h"
+    "Minigin/StateMachine.cpp"
+    "Minigin/HealthComponent.h"
+    "Minigin/HealthComponent.cpp"
+    "Minigin/HealthDisplayComponent.h"
+    "Minigin/HealthDisplayComponent.cpp"
+    "Minigin/ScoreComponent.h"
+    "Minigin/ScoreComponent.cpp"
+    "Minigin/ScoreDisplayComponent.h"
+    "Minigin/ScoreDisplayComponent.cpp"
+    "Minigin/PengoStates.h"
+    "Minigin/PengoStates.cpp"
+    "Minigin/PengoControllerComponent.h"
+    "Minigin/PengoControllerComponent.cpp"
+  )
+else()
+  set(TARGET_NAME minigin_game)
+  add_executable(${TARGET_NAME} WIN32
+    Minigin/Main.cpp
+    "Minigin/Commands.h"
+    "Minigin/Commands.cpp"
+    "Minigin/BaseState.h"
+    "Minigin/StateMachine.h"
+    "Minigin/StateMachine.cpp"
+    "Minigin/HealthComponent.h"
+    "Minigin/HealthComponent.cpp"
+    "Minigin/HealthDisplayComponent.h"
+    "Minigin/HealthDisplayComponent.cpp"
+    "Minigin/ScoreComponent.h"
+    "Minigin/ScoreComponent.cpp"
+    "Minigin/ScoreDisplayComponent.h"
+    "Minigin/ScoreDisplayComponent.cpp"
+    "Minigin/PengoStates.h"
+    "Minigin/PengoStates.cpp"
+    "Minigin/PengoControllerComponent.h"
+    "Minigin/PengoControllerComponent.cpp"
+  )
+endif()
+
+target_link_libraries(${TARGET_NAME} PRIVATE minigin)
+
 if(MSVC)
   # compile at warning level 4 + treat warnings as errors
+  target_compile_options(minigin PRIVATE /W4 /WX)
   target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
 else()
+  target_compile_options(minigin PRIVATE -Wall -Wextra -Werror)
   target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Werror)
 endif()
 
