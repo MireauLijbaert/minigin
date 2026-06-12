@@ -194,48 +194,50 @@ target_link_libraries(minigin PUBLIC
 if(EMSCRIPTEN)
   set(TARGET_NAME minigin_web)
   add_executable(${TARGET_NAME}
-    Minigin/Main.cpp
-    "Minigin/Commands.h"
-    "Minigin/Commands.cpp"
-    "Minigin/BaseState.h"
-    "Minigin/StateMachine.h"
-    "Minigin/StateMachine.cpp"
-    "Minigin/HealthComponent.h"
-    "Minigin/HealthComponent.cpp"
-    "Minigin/HealthDisplayComponent.h"
-    "Minigin/HealthDisplayComponent.cpp"
-    "Minigin/ScoreComponent.h"
-    "Minigin/ScoreComponent.cpp"
-    "Minigin/ScoreDisplayComponent.h"
-    "Minigin/ScoreDisplayComponent.cpp"
-    "Minigin/PengoStates.h"
-    "Minigin/PengoStates.cpp"
-    "Minigin/PengoControllerComponent.h"
-    "Minigin/PengoControllerComponent.cpp"
+    Pengo/Main.cpp
+    "Pengo/Commands.h"
+    "Pengo/Commands.cpp"
+    "Pengo/BaseState.h"
+    "Pengo/StateMachine.h"
+    "Pengo/StateMachine.cpp"
+    "Pengo/HealthComponent.h"
+    "Pengo/HealthComponent.cpp"
+    "Pengo/HealthDisplayComponent.h"
+    "Pengo/HealthDisplayComponent.cpp"
+    "Pengo/ScoreComponent.h"
+    "Pengo/ScoreComponent.cpp"
+    "Pengo/ScoreDisplayComponent.h"
+    "Pengo/ScoreDisplayComponent.cpp"
+    "Pengo/PengoStates.h"
+    "Pengo/PengoStates.cpp"
+    "Pengo/PengoControllerComponent.h"
+    "Pengo/PengoControllerComponent.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
   add_executable(${TARGET_NAME} WIN32
-    Minigin/Main.cpp
-    "Minigin/Commands.h"
-    "Minigin/Commands.cpp"
-    "Minigin/BaseState.h"
-    "Minigin/StateMachine.h"
-    "Minigin/StateMachine.cpp"
-    "Minigin/HealthComponent.h"
-    "Minigin/HealthComponent.cpp"
-    "Minigin/HealthDisplayComponent.h"
-    "Minigin/HealthDisplayComponent.cpp"
-    "Minigin/ScoreComponent.h"
-    "Minigin/ScoreComponent.cpp"
-    "Minigin/ScoreDisplayComponent.h"
-    "Minigin/ScoreDisplayComponent.cpp"
-    "Minigin/PengoStates.h"
-    "Minigin/PengoStates.cpp"
-    "Minigin/PengoControllerComponent.h"
-    "Minigin/PengoControllerComponent.cpp"
+    Pengo/Main.cpp
+    "Pengo/Commands.h"
+    "Pengo/Commands.cpp"
+    "Pengo/BaseState.h"
+    "Pengo/StateMachine.h"
+    "Pengo/StateMachine.cpp"
+    "Pengo/HealthComponent.h"
+    "Pengo/HealthComponent.cpp"
+    "Pengo/HealthDisplayComponent.h"
+    "Pengo/HealthDisplayComponent.cpp"
+    "Pengo/ScoreComponent.h"
+    "Pengo/ScoreComponent.cpp"
+    "Pengo/ScoreDisplayComponent.h"
+    "Pengo/ScoreDisplayComponent.cpp"
+    "Pengo/PengoStates.h"
+    "Pengo/PengoStates.cpp"
+    "Pengo/PengoControllerComponent.h"
+    "Pengo/PengoControllerComponent.cpp"
   )
 endif()
+
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Pengo/)
 
 target_link_libraries(${TARGET_NAME} PRIVATE minigin)
 
