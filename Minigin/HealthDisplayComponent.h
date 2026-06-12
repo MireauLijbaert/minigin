@@ -24,10 +24,10 @@ namespace dae
 		void Render() override;
 
 		void Notify(const Event& event, GameObject* actor) override;
-		void OnSubjectDestroyed() override;
+		void OnSubjectDestroyed(Subject* subject) override;
 
 	private:
-		Subject* m_pSubject;
+		HealthComponent* m_HealthComponent;
 		TextComponent* m_pTextComponent;
 	};
 }

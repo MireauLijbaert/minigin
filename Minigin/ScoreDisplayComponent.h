@@ -12,7 +12,7 @@ namespace dae
 	class ScoreDisplayComponent final : public BaseComponent, public Observer
 	{
 	public:
-		ScoreDisplayComponent(GameObject& owner, Subject* pSubject, TextComponent* pTextComponent);
+		ScoreDisplayComponent(GameObject& owner, ScoreComponent* pScoreComponent, TextComponent* pTextComponent);
 		~ScoreDisplayComponent() override;
 
 		ScoreDisplayComponent(const ScoreDisplayComponent& other) = delete;
@@ -24,10 +24,10 @@ namespace dae
 		void Render() override;
 
 		void Notify(const Event& event, GameObject* actor) override;
-		void OnSubjectDestroyed() override;
+		void OnSubjectDestroyed(Subject* subject) override;
 
 	private:
-		Subject* m_pSubject;
+		ScoreComponent* m_pScoreComponent;
 		TextComponent* m_pTextComponent;
 	};
 }

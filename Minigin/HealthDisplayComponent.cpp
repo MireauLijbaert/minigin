@@ -2,27 +2,28 @@
 #include "Subject.h"
 #include "TextComponent.h"
 #include "Event.h"
+#include "HealthComponent.h"
 
 #include <string>
 
 namespace dae
 {
-	HealthDisplayComponent::HealthDisplayComponent(GameObject& owner, Subject* pSubject, TextComponent* pTextComponent)
+	HealthDisplayComponent::HealthDisplayComponent(GameObject& owner, HealthComponent* pHealthComponent, TextComponent* pTextComponent)
 		: BaseComponent(owner)
-		, m_pSubject{ pSubject }
+		, m_HealthComponent{ pHealthComponent }
 		, m_pTextComponent{ pTextComponent }
 	{
-		if (m_pSubject)
+		if (m_HealthComponent)
 		{
-			m_pSubject->AddObserver(this);
+			m_HealthComponent->AddObserver(this);
 		}
 	}
 
 	HealthDisplayComponent::~HealthDisplayComponent()
 	{
-		if (m_pSubject)
+		if (m_HealthComponent)
 		{
-			m_pSubject->RemoveObserver(this);
+			m_HealthComponent->RemoveObserver(this);
 		}
 	}
 
@@ -46,8 +47,9 @@ namespace dae
 		}
 	}
 
-	void HealthDisplayComponent::OnSubjectDestroyed()
+	void HealthDisplayComponent::OnSubjectDestroyed(Subject* subject)
 	{
-		m_pSubject = nullptr;
+		if (&m_HealthComponent->GetSubject() == subject)
+			m_pScoreComponent = nullptr;
 	}
 }

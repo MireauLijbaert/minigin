@@ -9,6 +9,6 @@ namespace dae
 	public:
 		virtual ~Observer() = default;
 		virtual void Notify(const Event& event, GameObject* actor) = 0;
-		virtual void OnSubjectDestroyed() {}
+		virtual void OnSubjectDestroyed(Subject* subject) {}
 	};
 }

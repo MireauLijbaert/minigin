@@ -2,27 +2,28 @@
 #include "Subject.h"
 #include "TextComponent.h"
 #include "Event.h"
+#include "ScoreComponent.h"
 
 #include <string>
 
 namespace dae
 {
-	ScoreDisplayComponent::ScoreDisplayComponent(GameObject& owner, Subject* pSubject, TextComponent* pTextComponent)
+	ScoreDisplayComponent::ScoreDisplayComponent(GameObject& owner, ScoreComponent* pScoreComponent, TextComponent* pTextComponent)
 		: BaseComponent(owner)
-		, m_pSubject{ pSubject }
+		, m_pScoreComponent{ pScoreComponent }
 		, m_pTextComponent{ pTextComponent }
 	{
-		if (m_pSubject)
+		if (m_pScoreComponent)
 		{
-			m_pSubject->AddObserver(this);
+			m_pScoreComponent->AddObserver(this);
 		}
 	}
 
 	ScoreDisplayComponent::~ScoreDisplayComponent()
 	{
-		if (m_pSubject)
+		if (m_pScoreComponent)
 		{
-			m_pSubject->RemoveObserver(this);
+			m_pScoreComponent->RemoveObserver(this);
 		}
 	}
 
@@ -46,8 +47,9 @@ namespace dae
 		}
 	}
 
-	void ScoreDisplayComponent::OnSubjectDestroyed()
+	void ScoreDisplayComponent::OnSubjectDestroyed(Subject* subject)
 	{
-		m_pSubject = nullptr;
+		if (&m_pScoreComponent->GetSubject() == subject)
+			m_pScoreComponent = nullptr;
 	}
 }
