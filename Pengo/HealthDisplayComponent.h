@@ -6,13 +6,14 @@ namespace dae
 {
 	class Subject;
 	class TextComponent;
+	class HealthComponent;
 	struct Event;
 	class GameObject;
 
 	class HealthDisplayComponent final : public BaseComponent, public Observer
 	{
 	public:
-		HealthDisplayComponent(GameObject& owner, Subject* pSubject, TextComponent* pTextComponent);
+		HealthDisplayComponent(GameObject& owner, HealthComponent* pHealthComponent, TextComponent* pTextComponent);
 		~HealthDisplayComponent() override;
 
 		HealthDisplayComponent(const HealthDisplayComponent& other) = delete;

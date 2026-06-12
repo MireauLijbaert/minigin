@@ -15,7 +15,7 @@ namespace dae
 	{
 		if (m_pScoreComponent)
 		{
-			m_pScoreComponent->AddObserver(this);
+			m_pScoreComponent->GetSubject().AddObserver(this);
 		}
 	}
 
@@ -23,7 +23,7 @@ namespace dae
 	{
 		if (m_pScoreComponent)
 		{
-			m_pScoreComponent->RemoveObserver(this);
+			m_pScoreComponent->GetSubject().RemoveObserver(this);
 		}
 	}
 

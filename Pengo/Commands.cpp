@@ -2,12 +2,24 @@
 #include "TimeSingleton.h"
 #include "HealthComponent.h"
 #include "ScoreComponent.h"
+#include "GridMovementComponent.h"
 
 void dae::MovementCommand::Execute()
 {
 	m_direction = glm::normalize(m_direction); // Normalize the direction vector to ensure consistent movement speed regardless of the input magnitude.
 	m_direction *= m_speed * dae::Time::GetInstance().GetDeltaTime(); // Scale the direction by the maximum speed and delta time to get the movement vector for this frame.
 	m_actor->SetLocalPosition(m_actor->GetLocalPosition().GetPosition() + m_direction); // Update the owner's position by adding the movement vector to the current position.
+}
+
+dae::GridMoveCommand::GridMoveCommand(GameObject& actor, glm::ivec2 direction)
+	: m_Actor{ actor }
+	, m_Direction{ direction }
+{}
+
+void dae::GridMoveCommand::Execute()
+{
+	if (auto* movement = m_Actor.GetComponent<GridMovementComponent>())
+		movement->SetDirection(m_Direction);
 }
 
 void dae::TakeDamageCommand::Execute()

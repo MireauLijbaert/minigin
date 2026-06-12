@@ -15,7 +15,7 @@ namespace dae
 	{
 		if (m_HealthComponent)
 		{
-			m_HealthComponent->AddObserver(this);
+			m_HealthComponent->GetSubject().AddObserver(this);
 		}
 	}
 
@@ -23,7 +23,7 @@ namespace dae
 	{
 		if (m_HealthComponent)
 		{
-			m_HealthComponent->RemoveObserver(this);
+			m_HealthComponent->GetSubject().RemoveObserver(this);
 		}
 	}
 
@@ -50,6 +50,6 @@ namespace dae
 	void HealthDisplayComponent::OnSubjectDestroyed(Subject* subject)
 	{
 		if (&m_HealthComponent->GetSubject() == subject)
-			m_pScoreComponent = nullptr;
+			m_HealthComponent = nullptr;
 	}
 }

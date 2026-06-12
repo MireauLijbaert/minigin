@@ -1,7 +1,7 @@
 #pragma once
 #include "Singleton.h"
 #include "memory"
-#include "Commands.h"
+#include "Command.h"
 
 #include <cstdint>
 #include <SDL3/SDL.h>

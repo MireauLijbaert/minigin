@@ -7,7 +7,7 @@ dae::Subject::~Subject()
     for (Observer* observer : m_Observers)
     {
         if (observer)
-            observer->OnSubjectDestroyed();
+            observer->OnSubjectDestroyed(this);
     }
 }
 

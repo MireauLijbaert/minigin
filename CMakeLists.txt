@@ -28,6 +28,7 @@ add_library(minigin STATIC
   "Minigin/RotationComponent.h"
   "Minigin/BenchmarkComponent.h"
   "Minigin/BenchmarkComponent.cpp"
+  "Minigin/Command.h"
   "Minigin/Observer.h"
   "Minigin/Event.h"
   "Minigin/Subject.h"
@@ -197,6 +198,8 @@ if(EMSCRIPTEN)
     Pengo/Main.cpp
     "Pengo/Commands.h"
     "Pengo/Commands.cpp"
+    "Pengo/GridMovementComponent.h"
+    "Pengo/GridMovementComponent.cpp"
     "Pengo/BaseState.h"
     "Pengo/StateMachine.h"
     "Pengo/StateMachine.cpp"
@@ -219,6 +222,8 @@ else()
     Pengo/Main.cpp
     "Pengo/Commands.h"
     "Pengo/Commands.cpp"
+    "Pengo/GridMovementComponent.h"
+    "Pengo/GridMovementComponent.cpp"
     "Pengo/BaseState.h"
     "Pengo/StateMachine.h"
     "Pengo/StateMachine.cpp"

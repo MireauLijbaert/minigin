@@ -6,6 +6,7 @@ namespace dae
 {
 	class Subject;
 	class TextComponent;
+	class ScoreComponent;
 	struct Event;
 	class GameObject;
 

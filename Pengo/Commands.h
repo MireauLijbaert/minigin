@@ -1,14 +1,10 @@
 #pragma once
+#include "Command.h"
 #include "GameObject.h"
+#include <glm/glm.hpp>
 
 namespace dae
 {
-	class Command
-	{
-	public:
-		virtual ~Command() = default;
-		virtual void Execute() = 0;
-	};
 
 	class MovementCommand : public Command
 	{
@@ -19,6 +15,16 @@ namespace dae
 		GameObject* m_actor;
 		glm::vec3 m_direction;
 		float m_speed;
+	};
+
+	class GridMoveCommand final : public Command
+	{
+	public:
+		GridMoveCommand(GameObject& actor, glm::ivec2 direction);
+		void Execute() override;
+	private:
+		GameObject& m_Actor;
+		glm::ivec2 m_Direction;
 	};
 
 	// Temporary for taking damage with button press
