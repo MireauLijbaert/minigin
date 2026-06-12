@@ -94,3 +94,8 @@ void dae::Renderer::RenderTexture(const Texture2D& texture, const float x, const
 }
 
 SDL_Renderer* dae::Renderer::GetSDLRenderer() const { return m_renderer; }
+
+void dae::Renderer::SetScale(float scale)
+{
+	SDL_SetRenderScale(m_renderer, scale, scale);
+}

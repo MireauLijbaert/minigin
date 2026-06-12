@@ -11,8 +11,10 @@
 #include "Scene.h"
 #include "InputManager.h"
 #include "RenderComponent.h"
+#include "Renderer.h"
 #include "Commands.h"
 #include "GridMovementComponent.h"
+#include "LevelLoader.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -21,19 +23,22 @@ static void load()
 {
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
 
+    dae::Renderer::GetInstance().SetScale(2.f);
+
+    const int tileSize = 16;
+    const float moveSpeed = 128.f;
+
+    static LevelData levelData = LevelLoader::Load("Data/level1.txt", scene, tileSize);
+
     // ---------- Player ----------
     auto player = std::make_unique<dae::GameObject>();
     auto playerRender = std::make_unique<dae::RenderComponent>(*player);
     auto playerRenderPtr = playerRender.get();
     player->AddComponent(std::move(playerRender));
     playerRenderPtr->SetTexture("RedPengo.png");
-
-    const int tileSize = 32;
-    const glm::ivec2 gridSize{ 13, 13 };
-    const glm::ivec2 startCell{ 6, 6 };
-    const float moveSpeed = 128.f; // pixels per second
-
-    player->AddComponent(std::make_unique<dae::GridMovementComponent>(*player, tileSize, startCell, gridSize, moveSpeed));
+    player->AddComponent(std::make_unique<dae::GridMovementComponent>(
+        *player, tileSize, levelData.playerStartCell, levelData.gridSize, moveSpeed, levelData.registry.get()
+    ));
     dae::GameObject* playerPtr = player.get();
     scene.Add(std::move(player));
 
@@ -44,21 +49,6 @@ static void load()
     input.BindKeyboardInput(SDL_SCANCODE_S, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 0,  1 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_A, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{-1,  0 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_D, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 1,  0 }), dae::InputState::Held);
-
-    /*
-    // ---------- Background ----------
-    auto background = std::make_unique<dae::GameObject>();
-    ...
-
-    // ---------- FPS Counter ----------
-    ...
-
-    // ---------- Player 1 Health/Score Display ----------
-    ...
-
-    // ---------- Player 2 ----------
-    ...
-    */
 }
 
 int main(int, char* []) {

@@ -1,19 +1,23 @@
 #include "GridMovementComponent.h"
+#include "GridRegistry.h"
 #include "GameObject.h"
 #include "TimeSingleton.h"
 
 namespace dae
 {
-    GridMovementComponent::GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed)
+    GridMovementComponent::GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry)
         : BaseComponent(owner)
         , m_TileSize{ tileSize }
         , m_GridSize{ gridSize }
         , m_MoveSpeed{ moveSpeed }
+        , m_Registry{ registry }
         , m_GridPos{ startGridPos }
         , m_TargetGridPos{ startGridPos }
         , m_PixelPos{ float(startGridPos.x * tileSize), float(startGridPos.y * tileSize) }
     {
         GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
+        if (m_Registry)
+            m_Registry->Register(startGridPos, GetOwner());
     }
 
     void GridMovementComponent::Update()
@@ -32,6 +36,8 @@ namespace dae
         {
             // Arrived, snap exactly to grid cell
             m_PixelPos = target;
+            if (m_Registry)
+                m_Registry->Move(m_GridPos, m_TargetGridPos);
             m_GridPos = m_TargetGridPos;
             m_IsMoving = false;
 

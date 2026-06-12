@@ -4,10 +4,12 @@
 
 namespace dae
 {
+    class GridRegistry;
+
     class GridMovementComponent : public BaseComponent
     {
     public:
-        GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed);
+        GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry = nullptr);
 
         void Update() override;
         void Render() override {}
@@ -27,6 +29,7 @@ namespace dae
         int m_TileSize;
         glm::ivec2 m_GridSize;
         float m_MoveSpeed;
+        GridRegistry* m_Registry;
 
         glm::ivec2 m_GridPos;
         glm::ivec2 m_TargetGridPos;
