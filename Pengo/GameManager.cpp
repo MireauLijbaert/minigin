@@ -4,11 +4,14 @@
 #include "PengoControllerComponent.h"
 #include "HealthComponent.h"
 #include "GridMovementComponent.h"
+#include "GridRegistry.h"
 #include "GameObject.h"
 #include "Event.h"
 #include "TimeSingleton.h"
 #include "ServiceLocator.h"
 #include "PengoSounds.h"
+#include <algorithm>
+#include <cstdlib>
 
 namespace dae
 {
@@ -53,6 +56,9 @@ namespace dae
             if (entry.component == snobee) { entry.component = nullptr; break; }
 
         --m_SnoBeesRemaining;
+
+        // Hatch a replacement from a random egg before checking win condition
+        HatchRandomEgg();
 
         if (m_SnoBeesRemaining == 1)
             ServiceLocator::GetSoundSystem().Play(PengoSounds::ONE_BEE_LEFT, PengoSounds::FULL_VOLUME);
@@ -125,5 +131,36 @@ namespace dae
 
         if (player)
             player->MarkForRemoval();
+    }
+
+    void GameManager::HatchRandomEgg()
+    {
+        if (!m_SpawnFn || !m_Registry) return;
+
+        // Prune cells whose egg was already destroyed by a sno-bee
+        m_EggCells.erase(
+            std::remove_if(m_EggCells.begin(), m_EggCells.end(),
+                [this](glm::ivec2 pos) { return m_Registry->IsEmpty(pos); }),
+            m_EggCells.end()
+        );
+
+        if (m_EggCells.empty()) return;
+
+        // Pick and remove a random egg cell
+        int idx = rand() % static_cast<int>(m_EggCells.size());
+        glm::ivec2 pos = m_EggCells[idx];
+        m_EggCells.erase(m_EggCells.begin() + idx);
+
+        // Destroy the egg block
+        if (auto* egg = m_Registry->GetAt(pos))
+        {
+            m_Registry->Unregister(pos);
+            egg->MarkForRemoval();
+        }
+
+        ServiceLocator::GetSoundSystem().Play(PengoSounds::EGG_HATCH, PengoSounds::FULL_VOLUME);
+
+        // Spawn a new sno-bee at the hatched position
+        m_SpawnFn(pos);
     }
 }

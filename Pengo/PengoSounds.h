@@ -13,6 +13,7 @@ namespace PengoSounds {
     constexpr const char* ACT_CLEAR     = "Data/Sounds/Act Clear.mp3";
     constexpr const char* ACT_START     = "Data/Sounds/Act Start.mp3";
     constexpr const char* ONE_BEE_LEFT  = "Data/Sounds/One Snow-Bee Left.mp3";
+    constexpr const char* EGG_HATCH     = "Data/Sounds/Snow-Bee Spawning.mp3";
     constexpr const char* BGM           = "Data/Sounds/Main BGM (Popcorn).mp3";
     constexpr const char* BGM_FAST      = "Data/Sounds/Main BGM (Popcorn) - Fast.mp3";
 

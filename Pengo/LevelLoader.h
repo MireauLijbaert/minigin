@@ -13,6 +13,7 @@ struct LevelData
     glm::ivec2 playerStartCell{ 6, 6 };
     glm::ivec2 gridSize{ 13, 15 };
     std::vector<glm::ivec2> snoBeeSpawnCells;
+    std::vector<glm::ivec2> eggCells;
 };
 
 class LevelLoader

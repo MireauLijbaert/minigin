@@ -3,6 +3,7 @@
 #include "Observer.h"
 #include <glm/glm.hpp>
 #include <vector>
+#include <functional>
 
 namespace dae
 {
@@ -10,6 +11,7 @@ namespace dae
     class SnoBeeComponent;
     class PengoControllerComponent;
     class GameObject;
+    class GridRegistry;
 
     class GameManager final : public BaseComponent, public Observer
     {
@@ -26,9 +28,15 @@ namespace dae
 
         void Notify(const Event& event, GameObject* actor) override;
 
+        using SnoBeeSpawnFn = std::function<void(glm::ivec2)>;
+
         void SetPlayer(PengoControllerComponent* pengo, glm::ivec2 spawnCell);
         void AddSnoBee(SnoBeeComponent* snobee, glm::ivec2 spawnCell);
         void OnSnoBeeKilled(SnoBeeComponent* snobee);
+
+        void SetRegistry(GridRegistry* registry) { m_Registry = registry; }
+        void AddEggCell(glm::ivec2 cell) { m_EggCells.push_back(cell); }
+        void SetSnoBeeSpawnFn(SnoBeeSpawnFn fn) { m_SpawnFn = std::move(fn); }
 
         bool IsLevelCleared() const { return m_LevelCleared; }
         bool IsFrenzy()       const { return m_Frenzy; }
@@ -43,6 +51,7 @@ namespace dae
     private:
         void DoRespawn();
         void DoGameOver(GameObject* player);
+        void HatchRandomEgg();
 
         struct SnoBeeEntry { SnoBeeComponent* component; glm::ivec2 spawnCell; };
 
@@ -56,5 +65,9 @@ namespace dae
         float m_LevelTimer{ 0.f };
         bool  m_Frenzy{ false };
         TextComponent* m_VictoryText{ nullptr };
+
+        GridRegistry* m_Registry{ nullptr };
+        std::vector<glm::ivec2> m_EggCells;
+        SnoBeeSpawnFn m_SpawnFn;
     };
 }

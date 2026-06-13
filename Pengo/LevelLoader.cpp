@@ -30,7 +30,6 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
 
             if (c == 'I' || c == 'E' || c == 'D')
             {
-                // D = diamond block: treated as regular ice for now
                 auto obj = std::make_unique<dae::GameObject>();
                 auto render = std::make_unique<dae::RenderComponent>(*obj);
                 render->SetTexture("IceCube.png");
@@ -42,6 +41,9 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
 
                 data.registry->Register(cell, obj.get());
                 scene.Add(std::move(obj));
+
+                if (c == 'E')
+                    data.eggCells.push_back(cell);
             }
             else if (c == 'P')
             {

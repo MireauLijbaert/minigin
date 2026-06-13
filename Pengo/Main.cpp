@@ -95,7 +95,11 @@ static void load()
     pengoCompPtr->SetGameManager(gameManager);
 
     // ---------- Sno-bees ----------
-    auto addSnoBee = [&](glm::ivec2 startCell)
+    // Extract from static levelData so the lambda can capture by value 
+    glm::ivec2 gridSize = levelData.gridSize;
+    dae::GridRegistry* registry = levelData.registry.get();
+
+    auto addSnoBee = [&scene, tileSize, moveSpeed, playerPtr, gameManager, gridRootPtr, gridSize, registry](glm::ivec2 startCell)
     {
         auto snobee = std::make_unique<dae::GameObject>();
 
@@ -104,10 +108,10 @@ static void load()
         snobee->AddComponent(std::move(render));
 
         snobee->AddComponent(std::make_unique<dae::GridMovementComponent>(
-            *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.65f, levelData.registry.get(), false
+            *snobee, tileSize, startCell, gridSize, moveSpeed * 0.65f, registry, false
         ));
         auto snobeeBehavior = std::make_unique<dae::SnoBeeComponent>(
-            *snobee, levelData.gridSize, levelData.registry.get(), playerPtr, gameManager
+            *snobee, gridSize, registry, playerPtr, gameManager
         );
         auto* snobeeBehaviorPtr = snobeeBehavior.get();
         snobee->AddComponent(std::move(snobeeBehavior));
@@ -131,6 +135,12 @@ static void load()
         addSnoBee({ 11, 1 });
         addSnoBee({ 1, 13 });
     }
+
+    // Wire up egg hatching
+    gameManager->SetRegistry(levelData.registry.get());
+    for (const auto& cell : levelData.eggCells)
+        gameManager->AddEggCell(cell);
+    gameManager->SetSnoBeeSpawnFn(addSnoBee);
 
     // Start background music
     dae::ServiceLocator::GetSoundSystem().PlayMusic(PengoSounds::BGM, -1);
