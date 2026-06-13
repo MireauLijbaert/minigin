@@ -20,6 +20,8 @@
 #include "PengoControllerComponent.h"
 #include "ServiceLocator.h"
 #include "PengoSounds.h"
+#include "InputManager.h"
+#include "Command.h"
 
 #include <cmath>
 #include <filesystem>
@@ -161,6 +163,30 @@ static void LoadLevel(int levelNum)
     // Start background music
     dae::ServiceLocator::GetSoundSystem().PlayMusic(PengoSounds::BGM, -1);
     dae::ServiceLocator::GetSoundSystem().SetMusicVolume(PengoSounds::MUSIC_VOLUME);
+
+    // F1: skip to next level
+    dae::InputManager::GetInstance().BindKeyboardInput(
+        SDL_SCANCODE_F1,
+        std::make_unique<dae::LambdaCommand>([nextLevel]()
+        {
+            dae::SceneManager::GetInstance().RequestLoad([nextLevel]() { LoadLevel(nextLevel); });
+        }),
+        dae::InputState::Down
+    );
+
+    // F2: mute / unmute toggle
+    static bool s_muted = false;
+    dae::InputManager::GetInstance().BindKeyboardInput(
+        SDL_SCANCODE_F2,
+        std::make_unique<dae::LambdaCommand>([]()
+        {
+            s_muted = !s_muted;
+            dae::ServiceLocator::GetSoundSystem().SetMusicVolume(
+                s_muted ? 0 : PengoSounds::MUSIC_VOLUME
+            );
+        }),
+        dae::InputState::Down
+    );
 }
 
 static void load()
