@@ -225,6 +225,8 @@ if(EMSCRIPTEN)
     "Pengo/PengoStates.cpp"
     "Pengo/PengoControllerComponent.h"
     "Pengo/PengoControllerComponent.cpp"
+    "Pengo/GameManager.h"
+    "Pengo/GameManager.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
@@ -259,6 +261,8 @@ else()
     "Pengo/PengoStates.cpp"
     "Pengo/PengoControllerComponent.h"
     "Pengo/PengoControllerComponent.cpp"
+    "Pengo/GameManager.h"
+    "Pengo/GameManager.cpp"
   )
 endif()
 

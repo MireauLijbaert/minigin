@@ -11,11 +11,12 @@ namespace dae
     class GridRegistry;
     class GridMovementComponent;
     class GameObject;
+    class GameManager;
 
     class SnoBeeComponent final : public BaseComponent
     {
     public:
-        SnoBeeComponent(GameObject& owner, glm::ivec2 gridSize, GridRegistry* registry, GameObject* player);
+        SnoBeeComponent(GameObject& owner, glm::ivec2 gridSize, GridRegistry* registry, GameObject* player, GameManager* gameManager = nullptr);
 
         void Update() override;
         void Render() override {}
@@ -41,6 +42,7 @@ namespace dae
         GameObject* m_Player;
         glm::ivec2 m_GridSize;
         GridRegistry* m_Registry;
+        GameManager*  m_GameManager{ nullptr };
         bool m_Dead{ false };
     };
 }

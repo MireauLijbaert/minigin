@@ -16,7 +16,9 @@
 #include "GridMovementComponent.h"
 #include "SnoBeeComponent.h"
 #include "HealthComponent.h"
+#include "GameManager.h"
 #include "LevelLoader.h"
+#include "TextComponent.h"
 
 #include <cmath>
 #include <filesystem>
@@ -75,6 +77,26 @@ static void load()
     input.BindKeyboardInput(SDL_SCANCODE_D, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 1,  0 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_SPACE, std::make_unique<dae::PushCommand>(*playerPtr), dae::InputState::Down);
 
+    // ---------- Victory text ----------
+    auto font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 18);
+    auto victoryObj = std::make_unique<dae::GameObject>();
+    auto victoryRender = std::make_unique<dae::RenderComponent>(*victoryObj);
+    auto* victoryRenderPtr = victoryRender.get();
+    victoryObj->AddComponent(std::move(victoryRender));
+    auto victoryText = std::make_unique<dae::TextComponent>(*victoryObj, victoryRenderPtr, "", font);
+    auto* victoryTextPtr = victoryText.get();
+    victoryObj->AddComponent(std::move(victoryText));
+    victoryObj->SetLocalPosition(100.f, 120.f); // rough center of playfield
+    scene.Add(std::move(victoryObj));
+
+    // ---------- Game Manager ----------
+    const int snoBeeCount = 3;
+    auto gameManagerObj = std::make_unique<dae::GameObject>();
+    auto gameManagerComp = std::make_unique<dae::GameManager>(*gameManagerObj, snoBeeCount, victoryTextPtr);
+    dae::GameManager* gameManager = gameManagerComp.get();
+    gameManagerObj->AddComponent(std::move(gameManagerComp));
+    scene.Add(std::move(gameManagerObj));
+
     // ---------- Sno-bees ----------
     // Helper: create one Sno-bee at a given grid cell
     auto addSnoBee = [&](glm::ivec2 startCell)
@@ -89,7 +111,7 @@ static void load()
             *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.6f, levelData.registry.get(), false
         ));
         snobee->AddComponent(std::make_unique<dae::SnoBeeComponent>(
-            *snobee, levelData.gridSize, levelData.registry.get(), playerPtr
+            *snobee, levelData.gridSize, levelData.registry.get(), playerPtr, gameManager
         ));
 
         snobee->SetLocalPosition(float(startCell.x * tileSize), float(startCell.y * tileSize));

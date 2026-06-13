@@ -21,6 +21,8 @@ void TextComponent::Update()
 {
 	if (m_needsUpdate)
 	{
+		if (m_text.empty()) { m_needsUpdate = false; return; }
+
 		const auto surf = TTF_RenderText_Blended(m_font->GetFont(), m_text.c_str(), m_text.length(), m_color);
 		if (surf == nullptr)
 		{
@@ -51,6 +53,12 @@ void TextComponent::SetText(const std::string& text)
 {
 	m_text = text;
 	m_needsUpdate = true;
+	if (m_text.empty())
+	{
+		m_textTexture.reset();
+		m_renderComponent->SetTexture(std::shared_ptr<Texture2D>{nullptr});
+		m_needsUpdate = false;
+	}
 }
 
 // Added a method to set the color of the text, will need to re-render the text when this is called so set m_needsUpdate to true

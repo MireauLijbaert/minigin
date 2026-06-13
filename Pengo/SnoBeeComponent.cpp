@@ -2,17 +2,19 @@
 #include "SnoBeeStates.h"
 #include "GridMovementComponent.h"
 #include "GridRegistry.h"
+#include "GameManager.h"
 #include "IceBlockComponent.h"
 #include "HealthComponent.h"
 #include "GameObject.h"
 
 namespace dae
 {
-    SnoBeeComponent::SnoBeeComponent(GameObject& owner, glm::ivec2 gridSize, GridRegistry* registry, GameObject* player)
+    SnoBeeComponent::SnoBeeComponent(GameObject& owner, glm::ivec2 gridSize, GridRegistry* registry, GameObject* player, GameManager* gameManager)
         : BaseComponent(owner)
         , m_Player{ player }
         , m_GridSize{ gridSize }
         , m_Registry{ registry }
+        , m_GameManager{ gameManager }
     {
         m_StateMachine.SetState(std::make_unique<SnoBeeWanderState>(*this));
     }
@@ -77,6 +79,7 @@ namespace dae
     {
         if (m_Dead) return;
         m_Dead = true;
+        if (m_GameManager) m_GameManager->OnSnoBeeKilled();
         // Sno-bees use registerSelf=false so they are NOT in the registry, no Unregister needed
         GetOwner()->MarkForRemoval();
     }
