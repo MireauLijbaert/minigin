@@ -66,8 +66,16 @@ namespace dae
 
     bool GridMovementComponent::CanMoveTo(glm::ivec2 targetGridPos) const
     {
-        return targetGridPos.x >= 0 && targetGridPos.x < m_GridSize.x
-            && targetGridPos.y >= 0 && targetGridPos.y < m_GridSize.y;
+        // exclude border cells, # wall tiles are not in the registry
+        if (targetGridPos.x < 1 || targetGridPos.x >= m_GridSize.x - 1 ||
+            targetGridPos.y < 1 || targetGridPos.y >= m_GridSize.y - 1)
+            return false;
+
+        // check if something is already occupying that cell
+        if (m_Registry && !m_Registry->IsEmpty(targetGridPos))
+            return false;
+
+        return true;
     }
 
     void GridMovementComponent::TryMove(glm::ivec2 direction)
