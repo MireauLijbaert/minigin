@@ -20,10 +20,15 @@ namespace dae
     {
         if (m_IsSliding) return false;
 
-        // Must be able to move at least one step
+        // Check if there's room to slide at all
         const glm::ivec2 firstStep = m_GridPos + direction;
         if (!InBounds(firstStep, gridSize) || !registry->IsEmpty(firstStep))
-            return false;
+        {
+            // No room: block breaks
+            registry->Unregister(m_GridPos);
+            GetOwner()->MarkForRemoval();
+            return true;
+        }
 
         // Slide all the way until blocked
         glm::ivec2 finalPos = firstStep;

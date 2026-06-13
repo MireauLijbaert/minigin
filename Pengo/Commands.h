@@ -27,6 +27,16 @@ namespace dae
 		glm::ivec2 m_Direction;
 	};
 
+	// Pushes the ice block immediately in front of Pengo (in facing direction)
+	class PushCommand final : public Command
+	{
+	public:
+		explicit PushCommand(GameObject& actor);
+		void Execute() override;
+	private:
+		GameObject& m_Actor;
+	};
+
 	// Temporary for taking damage with button press
 	class TakeDamageCommand final : public Command
 	{

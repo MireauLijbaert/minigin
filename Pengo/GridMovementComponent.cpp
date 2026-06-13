@@ -1,5 +1,4 @@
 #include "GridMovementComponent.h"
-#include "IceBlockComponent.h"
 #include "GridRegistry.h"
 #include "GameObject.h"
 #include "TimeSingleton.h"
@@ -59,6 +58,7 @@ namespace dae
 
     void GridMovementComponent::SetDirection(glm::ivec2 direction)
     {
+        m_FacingDirection = direction; // always update facing, even if blocked or mid-move
         if (!m_IsMoving)
             TryMove(direction);
         else
@@ -85,24 +85,6 @@ namespace dae
         {
             m_TargetGridPos = target;
             m_IsMoving = true;
-            return;
-        }
-
-        // If a block is in the way, try to push it
-        if (m_Registry)
-        {
-            if (auto* obj = m_Registry->GetAt(target))
-            {
-                if (auto* block = obj->GetComponent<IceBlockComponent>())
-                {
-                    if (block->TryPush(direction, m_Registry, m_GridSize))
-                    {
-                        // Block pushed out of the way, Pengo steps into its old cell
-                        m_TargetGridPos = target;
-                        m_IsMoving = true;
-                    }
-                }
-            }
         }
     }
 }

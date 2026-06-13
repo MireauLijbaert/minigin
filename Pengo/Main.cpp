@@ -70,6 +70,7 @@ static void load()
     input.BindKeyboardInput(SDL_SCANCODE_S, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 0,  1 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_A, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{-1,  0 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_D, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 1,  0 }), dae::InputState::Held);
+    input.BindKeyboardInput(SDL_SCANCODE_SPACE, std::make_unique<dae::PushCommand>(*playerPtr), dae::InputState::Down);
 }
 
 int main(int, char* []) {

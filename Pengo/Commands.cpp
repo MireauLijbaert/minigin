@@ -3,6 +3,8 @@
 #include "HealthComponent.h"
 #include "ScoreComponent.h"
 #include "GridMovementComponent.h"
+#include "IceBlockComponent.h"
+#include "GridRegistry.h"
 
 void dae::MovementCommand::Execute()
 {
@@ -20,6 +22,26 @@ void dae::GridMoveCommand::Execute()
 {
 	if (auto* movement = m_Actor.GetComponent<GridMovementComponent>())
 		movement->SetDirection(m_Direction);
+}
+
+dae::PushCommand::PushCommand(GameObject& actor)
+	: m_Actor{ actor }
+{}
+
+void dae::PushCommand::Execute()
+{
+	auto* movement = m_Actor.GetComponent<GridMovementComponent>();
+	if (!movement || movement->IsMoving()) return;
+
+	auto* registry = movement->GetRegistry();
+	if (!registry) return;
+
+	const glm::ivec2 targetCell = movement->GetGridPos() + movement->GetFacingDirection();
+	if (auto* obj = registry->GetAt(targetCell))
+	{
+		if (auto* block = obj->GetComponent<IceBlockComponent>())
+			block->TryPush(movement->GetFacingDirection(), registry, movement->GetGridSize());
+	}
 }
 
 void dae::TakeDamageCommand::Execute()

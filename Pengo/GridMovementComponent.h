@@ -18,6 +18,9 @@ namespace dae
         void SetDirection(glm::ivec2 direction);
 
         glm::ivec2 GetGridPos() const { return m_GridPos; }
+        glm::ivec2 GetFacingDirection() const { return m_FacingDirection; }
+        glm::ivec2 GetGridSize() const { return m_GridSize; }
+        GridRegistry* GetRegistry() const { return m_Registry; }
         bool IsMoving() const { return m_IsMoving; }
 
     protected:
@@ -31,6 +34,7 @@ namespace dae
         float m_MoveSpeed;
         GridRegistry* m_Registry;
 
+        glm::ivec2 m_FacingDirection{ 0, 1 };
         glm::ivec2 m_GridPos;
         glm::ivec2 m_TargetGridPos;
         glm::vec2 m_PixelPos;
