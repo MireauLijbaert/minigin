@@ -89,15 +89,15 @@ namespace dae
         }
     }
 
-    void GridMovementComponent::Respawn(glm::ivec2 spawnCell)
+    void GridMovementComponent::WarpTo(glm::ivec2 cell)
     {
         if (m_Registry && m_RegisterSelf)
-            m_Registry->Move(m_GridPos, spawnCell);
+            m_Registry->Move(m_GridPos, cell);
 
-        m_GridPos = spawnCell;
-        m_TargetGridPos = spawnCell;
-        m_PixelPos = { float(spawnCell.x * m_TileSize), float(spawnCell.y * m_TileSize) };
-        m_IsMoving      = false;
+        m_GridPos = cell;
+        m_TargetGridPos = cell;
+        m_PixelPos = { float(cell.x * m_TileSize), float(cell.y * m_TileSize) };
+        m_IsMoving = false;
         m_BufferedDirection = { 0, 0 };
         GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
     }

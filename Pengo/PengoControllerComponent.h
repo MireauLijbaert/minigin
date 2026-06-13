@@ -24,7 +24,9 @@ namespace dae
         void Render() {}
 
         float GetMoveSpeed() const { return m_MoveSpeed; }
+        GameObject* GetOwner() const { return BaseComponent::GetOwner(); }
 
         void Die();
+        void Respawn(glm::ivec2 spawnCell);
     };
 }

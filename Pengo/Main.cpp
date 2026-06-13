@@ -9,16 +9,15 @@
 #include "SceneManager.h"
 #include "ResourceManager.h"
 #include "Scene.h"
-#include "InputManager.h"
 #include "RenderComponent.h"
 #include "Renderer.h"
-#include "Commands.h"
 #include "GridMovementComponent.h"
 #include "SnoBeeComponent.h"
 #include "HealthComponent.h"
 #include "GameManager.h"
 #include "LevelLoader.h"
 #include "TextComponent.h"
+#include "PengoControllerComponent.h"
 
 #include <cmath>
 #include <filesystem>
@@ -64,18 +63,12 @@ static void load()
         *player, tileSize, levelData.playerStartCell, levelData.gridSize, moveSpeed, levelData.registry.get(), false
     ));
     player->AddComponent(std::make_unique<dae::HealthComponent>(*player, 3));
+    auto pengoComp = std::make_unique<dae::PengoControllerComponent>(*player, moveSpeed, 0, dae::KeyboardScheme::WASD);
+    dae::PengoControllerComponent* pengoCompPtr = pengoComp.get();
+    player->AddComponent(std::move(pengoComp));
     dae::GameObject* playerPtr = player.get();
     player->SetParent(gridRootPtr, false);
     scene.Add(std::move(player));
-
-    // ---------- Input ----------
-    auto& input = dae::InputManager::GetInstance();
-
-    input.BindKeyboardInput(SDL_SCANCODE_W, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 0, -1 }), dae::InputState::Held);
-    input.BindKeyboardInput(SDL_SCANCODE_S, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 0,  1 }), dae::InputState::Held);
-    input.BindKeyboardInput(SDL_SCANCODE_A, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{-1,  0 }), dae::InputState::Held);
-    input.BindKeyboardInput(SDL_SCANCODE_D, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 1,  0 }), dae::InputState::Held);
-    input.BindKeyboardInput(SDL_SCANCODE_SPACE, std::make_unique<dae::PushCommand>(*playerPtr), dae::InputState::Down);
 
     // ---------- Victory text ----------
     auto font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 18);
@@ -96,7 +89,7 @@ static void load()
     gameManagerObj->AddComponent(std::move(gameManagerComp));
     scene.Add(std::move(gameManagerObj));
 
-    gameManager->SetPlayer(playerPtr, levelData.playerStartCell);
+    gameManager->SetPlayer(pengoCompPtr, levelData.playerStartCell);
 
     // ---------- Sno-bees ----------
     // Helper: create one Sno-bee at a given grid cell

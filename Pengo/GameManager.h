@@ -8,6 +8,7 @@ namespace dae
 {
     class TextComponent;
     class SnoBeeComponent;
+    class PengoControllerComponent;
     class GameObject;
 
     class GameManager final : public BaseComponent, public Observer
@@ -23,22 +24,21 @@ namespace dae
         void Update() override {}
         void Render() override {}
 
-        // Observer, reacts to player LifeChanged event
         void Notify(const Event& event, GameObject* actor) override;
 
-        void SetPlayer(GameObject* player, glm::ivec2 spawnCell);
+        void SetPlayer(PengoControllerComponent* pengo, glm::ivec2 spawnCell);
         void AddSnoBee(SnoBeeComponent* snobee, glm::ivec2 spawnCell);
         void OnSnoBeeKilled(SnoBeeComponent* snobee);
 
         bool IsLevelCleared() const { return m_LevelCleared; }
 
     private:
-        void Respawn();
-        void GameOver(GameObject* player);
+        void DoRespawn();
+        void DoGameOver(GameObject* player);
 
         struct SnoBeeEntry { SnoBeeComponent* component; glm::ivec2 spawnCell; };
 
-        GameObject* m_Player{ nullptr };
+        PengoControllerComponent* m_Pengo{ nullptr };
         glm::ivec2 m_PlayerSpawn{};
         std::vector<SnoBeeEntry> m_SnoBees;
         int m_SnoBeesRemaining{ 0 };

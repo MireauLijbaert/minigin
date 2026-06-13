@@ -17,7 +17,7 @@ namespace dae
         // Called by input commands
         void SetDirection(glm::ivec2 direction);
 
-        void Respawn(glm::ivec2 spawnCell);
+        void WarpTo(glm::ivec2 cell);
 
         glm::ivec2 GetGridPos() const { return m_GridPos; }
         glm::ivec2 GetTargetGridPos() const { return m_TargetGridPos; }

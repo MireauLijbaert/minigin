@@ -89,7 +89,7 @@ namespace dae
         m_Dead = false;
         m_StateMachine.SetState(std::make_unique<SnoBeeWanderState>(*this));
         if (auto* mov = GetMovement())
-            mov->Respawn(spawnCell);
+            mov->WarpTo(spawnCell);
     }
 
     GridMovementComponent* SnoBeeComponent::GetMovement()
