@@ -42,6 +42,5 @@ namespace dae
         glm::ivec2 m_GridSize;
         GridRegistry* m_Registry;
         bool m_Dead{ false };
-        float m_DamageCooldown{ 0.f };
     };
 }

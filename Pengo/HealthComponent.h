@@ -4,34 +4,33 @@
 
 namespace dae
 {
-	class GameObject;
+    class GameObject;
 
-	class HealthComponent : public BaseComponent
-	{
-	public:
+    class HealthComponent : public BaseComponent
+    {
+    public:
+        HealthComponent(GameObject& pOwner, int lives) : BaseComponent(pOwner), m_MaxLives{ lives }, m_Lives{ lives } {}
+        ~HealthComponent() = default;
+        HealthComponent(const HealthComponent&)            = delete;
+        HealthComponent(HealthComponent&&)                 = delete;
+        HealthComponent& operator=(const HealthComponent&) = delete;
+        HealthComponent& operator=(HealthComponent&&)      = delete;
 
-		HealthComponent(GameObject& pOwner, int maxHealth) : BaseComponent(pOwner), m_MaxHealth{ maxHealth }, m_CurrentHealth{ maxHealth } {}
-		~HealthComponent() = default;
-		HealthComponent(const HealthComponent& other) = delete;
-		HealthComponent(HealthComponent&& other) = delete;
-		HealthComponent& operator=(const HealthComponent& other) = delete;
-		HealthComponent& operator=(HealthComponent&& other) = delete;
+        void Update() override {}
+        void Render() override {}
 
-		void Update() override;
-		void Render() override;
+        // Lose one life and die. Fires LifeChanged with remaining lives.
+        void LoseLife();
 
-		void TakeDamage(int damage);
-		void Heal(int healAmount);
-		int GetCurrentHealth() const { return m_CurrentHealth; }
-		int GetMaxHealth() const { return m_MaxHealth; }
+        int  GetLives()    const { return m_Lives; }
+        int  GetMaxLives() const { return m_MaxLives; }
+        bool IsAlive()     const { return m_Lives > 0; }
 
-		Subject& GetSubject() { return m_Subject; }
+        Subject& GetSubject() { return m_Subject; }
 
-
-	private:
-		// Use ints as we have a set amount of lives
-		int m_MaxHealth;
-		int m_CurrentHealth;
-		Subject m_Subject;
-	};
+    private:
+        int     m_MaxLives;
+        int     m_Lives;
+        Subject m_Subject;
+    };
 }

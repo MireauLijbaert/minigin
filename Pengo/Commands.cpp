@@ -49,7 +49,7 @@ void dae::TakeDamageCommand::Execute()
 	auto health = m_Actor.GetComponent<HealthComponent>();
 	if (health)
 	{
-		health->TakeDamage(m_Damage);
+		health->LoseLife();
 	}
 }
 

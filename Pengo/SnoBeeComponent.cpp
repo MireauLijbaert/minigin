@@ -5,7 +5,6 @@
 #include "IceBlockComponent.h"
 #include "HealthComponent.h"
 #include "GameObject.h"
-#include "TimeSingleton.h"
 
 namespace dae
 {
@@ -28,17 +27,13 @@ namespace dae
         if (m_PendingState)
             m_StateMachine.SetState(std::move(m_PendingState));
 
-        // Tick cooldown and check player overlap
-        if (m_DamageCooldown > 0.f)
-            m_DamageCooldown -= Time::GetInstance().GetDeltaTime();
-
         CheckPlayerCollision();
         CheckBlockCollision();
     }
 
     void SnoBeeComponent::CheckPlayerCollision()
     {
-        if (m_DamageCooldown > 0.f || !m_Player) return;
+        if (!m_Player) return;
 
         auto* myMov = GetMovement();
         auto* playerMov = m_Player->GetComponent<GridMovementComponent>();
@@ -47,10 +42,7 @@ namespace dae
         if (myMov->GetGridPos() == playerMov->GetGridPos())
         {
             if (auto* health = m_Player->GetComponent<HealthComponent>())
-            {
-                health->TakeDamage(1);
-                m_DamageCooldown = 1.f; // 1 second grace period before dealing damage again
-            }
+                health->LoseLife();
         }
     }
 
