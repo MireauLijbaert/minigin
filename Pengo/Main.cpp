@@ -14,6 +14,8 @@
 #include "Renderer.h"
 #include "Commands.h"
 #include "GridMovementComponent.h"
+#include "SnoBeeComponent.h"
+#include "HealthComponent.h"
 #include "LevelLoader.h"
 
 #include <cmath>
@@ -57,8 +59,9 @@ static void load()
     player->AddComponent(std::move(playerRender));
     playerRenderPtr->SetTexture("RedPengo.png");
     player->AddComponent(std::make_unique<dae::GridMovementComponent>(
-        *player, tileSize, levelData.playerStartCell, levelData.gridSize, moveSpeed, levelData.registry.get()
+        *player, tileSize, levelData.playerStartCell, levelData.gridSize, moveSpeed, levelData.registry.get(), false
     ));
+    player->AddComponent(std::make_unique<dae::HealthComponent>(*player, 3));
     dae::GameObject* playerPtr = player.get();
     player->SetParent(gridRootPtr, false);
     scene.Add(std::move(player));
@@ -71,6 +74,32 @@ static void load()
     input.BindKeyboardInput(SDL_SCANCODE_A, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{-1,  0 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_D, std::make_unique<dae::GridMoveCommand>(*playerPtr, glm::ivec2{ 1,  0 }), dae::InputState::Held);
     input.BindKeyboardInput(SDL_SCANCODE_SPACE, std::make_unique<dae::PushCommand>(*playerPtr), dae::InputState::Down);
+
+    // ---------- Sno-bees ----------
+    // Helper: create one Sno-bee at a given grid cell
+    auto addSnoBee = [&](glm::ivec2 startCell)
+    {
+        auto snobee = std::make_unique<dae::GameObject>();
+
+        auto render = std::make_unique<dae::RenderComponent>(*snobee);
+        render->SetTexture("SnoBee.png");
+        snobee->AddComponent(std::move(render));
+
+        snobee->AddComponent(std::make_unique<dae::GridMovementComponent>(
+            *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.6f, levelData.registry.get(), false
+        ));
+        snobee->AddComponent(std::make_unique<dae::SnoBeeComponent>(
+            *snobee, levelData.gridSize, levelData.registry.get(), playerPtr
+        ));
+
+        snobee->SetLocalPosition(float(startCell.x * tileSize), float(startCell.y * tileSize));
+        snobee->SetParent(gridRootPtr, false);
+        scene.Add(std::move(snobee));
+    };
+
+    addSnoBee({ 1,  1 });
+    addSnoBee({ 11, 1 });
+    addSnoBee({ 1, 13 });
 }
 
 int main(int, char* []) {

@@ -9,7 +9,7 @@ namespace dae
     class GridMovementComponent : public BaseComponent
     {
     public:
-        GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry = nullptr);
+        GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry = nullptr, bool registerSelf = true);
 
         void Update() override;
         void Render() override {}
@@ -18,6 +18,7 @@ namespace dae
         void SetDirection(glm::ivec2 direction);
 
         glm::ivec2 GetGridPos() const { return m_GridPos; }
+        glm::ivec2 GetTargetGridPos() const { return m_TargetGridPos; }
         glm::ivec2 GetFacingDirection() const { return m_FacingDirection; }
         glm::ivec2 GetGridSize() const { return m_GridSize; }
         GridRegistry* GetRegistry() const { return m_Registry; }

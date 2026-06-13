@@ -6,6 +6,8 @@
 
 namespace dae
 {
+    IceBlockComponent* IceBlockComponent::s_SlidingBlock{ nullptr };
+
     IceBlockComponent::IceBlockComponent(GameObject& owner, glm::ivec2 gridPos, int tileSize, float slideSpeed)
         : BaseComponent(owner)
         , m_GridPos{ gridPos }
@@ -14,6 +16,12 @@ namespace dae
         , m_TileSize{ tileSize }
         , m_SlideSpeed{ slideSpeed }
     {
+    }
+
+    IceBlockComponent::~IceBlockComponent()
+    {
+        if (s_SlidingBlock == this)
+            s_SlidingBlock = nullptr;
     }
 
     bool IceBlockComponent::TryPush(glm::ivec2 direction, GridRegistry* registry, glm::ivec2 gridSize)
@@ -40,12 +48,17 @@ namespace dae
             finalPos = next;
         }
 
+        // Record every cell the block will pass through for kill detection
+        m_SlidePath.clear();
+        for (glm::ivec2 cell = firstStep; cell != finalPos + direction; cell += direction)
+            m_SlidePath.push_back(cell);
+
         // Update registry immediately so collision is correct during animation
         registry->Move(m_GridPos, finalPos);
         m_GridPos = finalPos;
-
         m_TargetPixelPos = { float(finalPos.x * m_TileSize), float(finalPos.y * m_TileSize) };
         m_IsSliding = true;
+        s_SlidingBlock = this;
         return true;
     }
 
@@ -61,6 +74,8 @@ namespace dae
         {
             m_PixelPos = m_TargetPixelPos;
             m_IsSliding = false;
+            m_SlidePath.clear();
+            s_SlidingBlock = nullptr;
         }
         else
         {
@@ -68,6 +83,13 @@ namespace dae
         }
 
         GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
+    }
+
+    bool IceBlockComponent::IsInSlidePath(glm::ivec2 cell) const
+    {
+        for (const auto& c : m_SlidePath)
+            if (c == cell) return true;
+        return false;
     }
 
     bool IceBlockComponent::InBounds(glm::ivec2 pos, glm::ivec2 gridSize)

@@ -5,7 +5,7 @@
 
 namespace dae
 {
-    GridMovementComponent::GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry)
+    GridMovementComponent::GridMovementComponent(GameObject& owner, int tileSize, glm::ivec2 startGridPos, glm::ivec2 gridSize, float moveSpeed, GridRegistry* registry, bool registerSelf)
         : BaseComponent(owner)
         , m_TileSize{ tileSize }
         , m_GridSize{ gridSize }
@@ -16,7 +16,7 @@ namespace dae
         , m_PixelPos{ float(startGridPos.x * tileSize), float(startGridPos.y * tileSize) }
     {
         GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
-        if (m_Registry)
+        if (m_Registry && registerSelf)
             m_Registry->Register(startGridPos, GetOwner());
     }
 
