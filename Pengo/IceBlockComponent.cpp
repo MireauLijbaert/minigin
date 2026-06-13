@@ -2,6 +2,8 @@
 #include "GridRegistry.h"
 #include "GameObject.h"
 #include "TimeSingleton.h"
+#include "ServiceLocator.h"
+#include "PengoSounds.h"
 #include <glm/glm.hpp>
 
 namespace dae
@@ -33,6 +35,7 @@ namespace dae
         if (!InBounds(firstStep, gridSize) || !registry->IsEmpty(firstStep))
         {
             // No room: block breaks
+            dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::BLOCK_BROKEN, PengoSounds::FULL_VOLUME);
             registry->Unregister(m_GridPos);
             GetOwner()->MarkForRemoval();
             return true;
@@ -76,6 +79,7 @@ namespace dae
             m_IsSliding = false;
             m_SlidePath.clear();
             s_SlidingBlock = nullptr;
+            dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::BLOCK_STOPPED, PengoSounds::FULL_VOLUME);
         }
         else
         {

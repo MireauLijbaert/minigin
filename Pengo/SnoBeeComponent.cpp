@@ -6,6 +6,8 @@
 #include "IceBlockComponent.h"
 #include "HealthComponent.h"
 #include "GameObject.h"
+#include "ServiceLocator.h"
+#include "PengoSounds.h"
 
 namespace dae
 {
@@ -54,6 +56,7 @@ namespace dae
 
         if (myMov->GetGridPos() == playerMov->GetGridPos())
         {
+            dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::PLAYER_HIT, PengoSounds::FULL_VOLUME);
             if (auto* health = m_Player->GetComponent<HealthComponent>())
                 health->LoseLife();
         }
@@ -67,6 +70,7 @@ namespace dae
     void SnoBeeComponent::Stun(float duration)
     {
         if (m_Dead) return;
+        dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::BEE_STUNNED, PengoSounds::FULL_VOLUME);
         m_StateMachine.SetState(std::make_unique<SnoBeeStunnedState>(*this, duration));
     }
 
@@ -89,6 +93,7 @@ namespace dae
     {
         if (m_Dead) return;
         m_Dead = true;
+        dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::BEE_SQUASHED, PengoSounds::FULL_VOLUME);
         if (m_GameManager) m_GameManager->OnSnoBeeKilled(this);
         GetOwner()->MarkForRemoval();
     }

@@ -1,0 +1,232 @@
+#include "SoundSystem.h"
+#include <SDL3_mixer/SDL_mixer.h>
+#include <unordered_map>
+#include <vector>
+#include <queue>
+#include <variant>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include <string>
+#include <iostream>
+
+namespace dae {
+
+    // ---------------------------------------------------------------------------
+    // Request types pushed onto the queue by the game thread
+    // ---------------------------------------------------------------------------
+    struct PlaySoundRequest   { std::string filename; int volume; };
+    struct PlayMusicRequest   { std::string filename; int loops; };
+    struct StopMusicRequest   {};
+    struct SetMusicVolRequest { int volume; };
+
+    using AudioRequest = std::variant<
+        PlaySoundRequest,
+        PlayMusicRequest,
+        StopMusicRequest,
+        SetMusicVolRequest
+    >;
+
+    // ---------------------------------------------------------------------------
+    // Impl - owns the mixer, all cached audio, and the worker thread
+    // ---------------------------------------------------------------------------
+    struct SdlSoundSystem::Impl {
+        MIX_Mixer* mixer{ nullptr };
+
+        // Audio cache: keyed by filename, shared between SFX and music
+        std::unordered_map<std::string, MIX_Audio*> audioCache;
+
+        // Active one-shot SFX tracks (created per play, destroyed when done)
+        std::vector<MIX_Track*> sfxTracks;
+
+        // Dedicated track for background music
+        MIX_Track* musicTrack{ nullptr };
+
+        // Thread-safe queue
+        std::queue<AudioRequest> queue;
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::thread worker;
+        std::atomic<bool> running{ true };
+
+        Impl() {
+            MIX_Init();
+            mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr);
+            if (!mixer)
+                std::cerr << "SoundSystem: MIX_CreateMixerDevice failed: " << SDL_GetError() << "\n";
+            worker = std::thread([this]() { WorkerLoop(); });
+        }
+
+        ~Impl() {
+            running = false;
+            cv.notify_one();
+            if (worker.joinable()) worker.join();
+
+            // Free SFX tracks
+            for (MIX_Track* t : sfxTracks)
+                MIX_DestroyTrack(t);
+
+            // Free music track
+            if (musicTrack) MIX_DestroyTrack(musicTrack);
+
+            // Free cached audio objects
+            for (auto& [key, audio] : audioCache)
+                MIX_DestroyAudio(audio);
+
+            if (mixer) MIX_DestroyMixer(mixer);
+            MIX_Quit();
+        }
+
+        // Called by game thread - non-blocking
+        void Push(AudioRequest req) {
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                queue.push(std::move(req));
+            }
+            cv.notify_one();
+        }
+
+        // Worker thread entry point
+        void WorkerLoop() {
+            while (true) {
+                std::unique_lock<std::mutex> lock(mutex);
+                cv.wait(lock, [this] { return !queue.empty() || !running; });
+
+                while (!queue.empty()) {
+                    AudioRequest req = std::move(queue.front());
+                    queue.pop();
+                    lock.unlock();
+
+                    CleanupFinishedTracks();
+                    Process(req);
+
+                    lock.lock();
+                }
+
+                if (!running) break;
+            }
+        }
+
+        // Remove tracks whose audio has finished playing
+        void CleanupFinishedTracks() {
+            sfxTracks.erase(
+                std::remove_if(sfxTracks.begin(), sfxTracks.end(), [](MIX_Track* t) {
+                    if (!MIX_TrackPlaying(t)) {
+                        MIX_DestroyTrack(t);
+                        return true;
+                    }
+                    return false;
+                }),
+                sfxTracks.end()
+            );
+        }
+
+        void Process(const AudioRequest& req) {
+            std::visit([this](auto&& r) { Handle(r); }, req);
+        }
+
+        // Load (or return cached) MIX_Audio. predecode=true for SFX, false for music.
+        MIX_Audio* GetAudio(const std::string& filename, bool predecode) {
+            if (!mixer) return nullptr;
+            auto it = audioCache.find(filename);
+            if (it != audioCache.end()) return it->second;
+
+            MIX_Audio* audio = MIX_LoadAudio(mixer, filename.c_str(), predecode);
+            if (!audio)
+                std::cerr << "SoundSystem: failed to load '" << filename << "': " << SDL_GetError() << "\n";
+            else
+                audioCache[filename] = audio;
+            return audio;
+        }
+
+        void Handle(const PlaySoundRequest& r) {
+            if (!mixer) return;
+            MIX_Audio* audio = GetAudio(r.filename, true);
+            if (!audio) return;
+
+            MIX_Track* track = MIX_CreateTrack(mixer);
+            if (!track) {
+                // Fallback: fire-and-forget, no volume control
+                MIX_PlayAudio(mixer, audio);
+                return;
+            }
+
+            MIX_SetTrackAudio(track, audio);
+            MIX_SetTrackGain(track, r.volume / 128.0f);
+            MIX_PlayTrack(track, 0);
+            sfxTracks.push_back(track);
+        }
+
+        void Handle(const PlayMusicRequest& r) {
+            if (!mixer) return;
+
+            MIX_Audio* next = GetAudio(r.filename, false);
+            if (!next) return;
+
+            // Skip if already playing this exact audio
+            if (musicTrack && MIX_GetTrackAudio(musicTrack) == next && MIX_TrackPlaying(musicTrack))
+                return;
+
+            // Destroy old track and create a fresh one - cleaner than stop/set/play
+            if (musicTrack) {
+                MIX_DestroyTrack(musicTrack);
+                musicTrack = nullptr;
+            }
+
+            musicTrack = MIX_CreateTrack(mixer);
+            if (!musicTrack) return;
+
+            MIX_SetTrackAudio(musicTrack, next);
+
+            SDL_PropertiesID props = SDL_CreateProperties();
+            SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER, (Sint64)r.loops);
+            MIX_PlayTrack(musicTrack, props);
+            SDL_DestroyProperties(props);
+        }
+
+        void Handle(const StopMusicRequest&) {
+            if (musicTrack) MIX_StopTrack(musicTrack, 0);
+        }
+
+        void Handle(const SetMusicVolRequest& r) {
+            if (musicTrack) MIX_SetTrackGain(musicTrack, r.volume / 128.0f);
+        }
+    };
+
+    // ---------------------------------------------------------------------------
+    // SdlSoundSystem public API - all calls are non-blocking
+    // ---------------------------------------------------------------------------
+    SdlSoundSystem::SdlSoundSystem()
+        : pImpl{ std::make_unique<Impl>() }
+    {}
+
+    SdlSoundSystem::~SdlSoundSystem()
+    {
+        pImpl.reset();
+    }
+
+    void SdlSoundSystem::Play(const std::string& filename, int volume)
+    {
+        pImpl->Push(PlaySoundRequest{ filename, volume });
+    }
+
+    void SdlSoundSystem::PlayMusic(const std::string& filename, int loops)
+    {
+        pImpl->Push(PlayMusicRequest{ filename, loops });
+    }
+
+    void SdlSoundSystem::StopMusic()
+    {
+        pImpl->Push(StopMusicRequest{});
+    }
+
+    void SdlSoundSystem::SetMusicVolume(int volume)
+    {
+        pImpl->Push(SetMusicVolRequest{ volume });
+    }
+
+    // Update() is a no-op: the worker thread processes the queue independently.
+    void SdlSoundSystem::Update() {}
+
+}

@@ -34,6 +34,7 @@ add_library(minigin STATIC
   "Minigin/Subject.h"
   "Minigin/Subject.cpp"
   "Minigin/SoundSystem.h"
+  "Minigin/SoundSystem.cpp"
   "Minigin/ServiceLocator.h"
   "Minigin/Singleton.h"
 )

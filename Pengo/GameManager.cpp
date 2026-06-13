@@ -7,6 +7,8 @@
 #include "GameObject.h"
 #include "Event.h"
 #include "TimeSingleton.h"
+#include "ServiceLocator.h"
+#include "PengoSounds.h"
 
 namespace dae
 {
@@ -21,8 +23,11 @@ namespace dae
         if (m_LevelCleared || m_GameOver) return;
 
         m_LevelTimer += Time::GetInstance().GetDeltaTime();
-        if (!m_Frenzy && m_LevelTimer >= 60.f)
+        if (!m_Frenzy && m_LevelTimer >= 60.f) {
             m_Frenzy = true;
+            ServiceLocator::GetSoundSystem().PlayMusic(PengoSounds::BGM_FAST, -1);
+            ServiceLocator::GetSoundSystem().SetMusicVolume(PengoSounds::MUSIC_VOLUME);
+        }
     }
 
     void GameManager::SetPlayer(PengoControllerComponent* pengo, glm::ivec2 spawnCell)
@@ -47,9 +52,16 @@ namespace dae
         for (auto& entry : m_SnoBees)
             if (entry.component == snobee) { entry.component = nullptr; break; }
 
-        if (--m_SnoBeesRemaining <= 0)
+        --m_SnoBeesRemaining;
+
+        if (m_SnoBeesRemaining == 1)
+            ServiceLocator::GetSoundSystem().Play(PengoSounds::ONE_BEE_LEFT, PengoSounds::FULL_VOLUME);
+
+        if (m_SnoBeesRemaining <= 0)
         {
             m_LevelCleared = true;
+            ServiceLocator::GetSoundSystem().StopMusic();
+            ServiceLocator::GetSoundSystem().Play(PengoSounds::ACT_CLEAR, PengoSounds::FULL_VOLUME);
             if (m_VictoryText)
                 m_VictoryText->SetText("LEVEL CLEARED!");
         }
@@ -85,6 +97,8 @@ namespace dae
         if (event.id != "LifeChanged") return;
 
         const int livesLeft = event.args[0].intValue;
+
+        ServiceLocator::GetSoundSystem().Play(PengoSounds::MISS, PengoSounds::FULL_VOLUME);
 
         if (livesLeft > 0)
             DoRespawn();

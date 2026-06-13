@@ -18,6 +18,8 @@
 #include "LevelLoader.h"
 #include "TextComponent.h"
 #include "PengoControllerComponent.h"
+#include "ServiceLocator.h"
+#include "PengoSounds.h"
 
 #include <cmath>
 #include <filesystem>
@@ -129,6 +131,10 @@ static void load()
         addSnoBee({ 11, 1 });
         addSnoBee({ 1, 13 });
     }
+
+    // Start background music
+    dae::ServiceLocator::GetSoundSystem().PlayMusic(PengoSounds::BGM, -1);
+    dae::ServiceLocator::GetSoundSystem().SetMusicVolume(PengoSounds::MUSIC_VOLUME);
 }
 
 int main(int, char* []) {

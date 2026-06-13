@@ -6,6 +6,8 @@
 #include "IceBlockComponent.h"
 #include "GridRegistry.h"
 #include "PengoControllerComponent.h"
+#include "ServiceLocator.h"
+#include "PengoSounds.h"
 
 // Brief lock so Pengo can't move/push again immediately (push animation)
 static constexpr float kPushLockDuration = 0.3f;
@@ -50,6 +52,7 @@ void dae::PushCommand::Execute()
 	{
 		if (auto* pengo = m_Actor.GetComponent<PengoControllerComponent>())
 			pengo->WallStun();
+		dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::PUSH_WALL, PengoSounds::FULL_VOLUME);
 		movement->LockFor(kPushLockDuration);
 		return;
 	}
@@ -59,6 +62,7 @@ void dae::PushCommand::Execute()
 		if (auto* block = obj->GetComponent<IceBlockComponent>())
 		{
 			block->TryPush(facingDir, registry, gridSize);
+			dae::ServiceLocator::GetSoundSystem().Play(PengoSounds::PUSH_BLOCK, PengoSounds::FULL_VOLUME);
 			movement->LockFor(kPushLockDuration);
 		}
 	}

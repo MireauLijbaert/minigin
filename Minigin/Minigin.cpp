@@ -18,6 +18,8 @@
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "TimeSingleton.h"
+#include "ServiceLocator.h"
+#include "SoundSystem.h"
 
 SDL_Window* g_window{};
 
@@ -67,6 +69,8 @@ dae::Minigin::Minigin(const std::filesystem::path& dataPath)
 		throw std::runtime_error(std::string("SDL_Init Error: ") + SDL_GetError());
 	}
 
+	ServiceLocator::RegisterSoundSystem(std::make_unique<SdlSoundSystem>());
+
 	g_window = SDL_CreateWindow(
 		"Programming 4 assignment",
 		1024,
@@ -84,6 +88,7 @@ dae::Minigin::Minigin(const std::filesystem::path& dataPath)
 
 dae::Minigin::~Minigin()
 {
+	ServiceLocator::Shutdown(); // destroys SdlSoundSystem (calls Mix_CloseAudio) before SDL_Quit
 	Renderer::GetInstance().Destroy();
 	SDL_DestroyWindow(g_window);
 	g_window = nullptr;
@@ -93,8 +98,9 @@ dae::Minigin::~Minigin()
 void dae::Minigin::Run(const std::function<void()>& load)
 {
 	load();
+	m_lastTime = std::chrono::high_resolution_clock::now(); // reset so first frame dt isn't "time since epoch"
 #ifndef __EMSCRIPTEN__
-	
+
 	while (!m_quit)
 	{
 		RunOneFrame();
@@ -116,6 +122,7 @@ void dae::Minigin::RunOneFrame()
 	// Don't need a fixed time step for this project
 	dae::Time::GetInstance().SetDeltaTime(delta_time);
 	m_quit = !InputManager::GetInstance().ProcessInput();
+	ServiceLocator::GetSoundSystem().Update();
 	SceneManager::GetInstance().Update();
 	Renderer::GetInstance().Render();
 
