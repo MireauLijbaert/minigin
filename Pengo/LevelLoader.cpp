@@ -28,8 +28,9 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
             const char c = line[col];
             const glm::ivec2 cell{ col, row };
 
-            if (c == 'I' || c == 'E')
+            if (c == 'I' || c == 'E' || c == 'D')
             {
+                // D = diamond block: treated as regular ice for now
                 auto obj = std::make_unique<dae::GameObject>();
                 auto render = std::make_unique<dae::RenderComponent>(*obj);
                 render->SetTexture("IceCube.png");
@@ -45,6 +46,10 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
             else if (c == 'P')
             {
                 data.playerStartCell = cell;
+            }
+            else if (c == 'S')
+            {
+                data.snoBeeSpawnCells.push_back(cell);
             }
 
             maxCol = std::max(maxCol, col + 1);

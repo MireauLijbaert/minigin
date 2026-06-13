@@ -5,6 +5,7 @@
 #include "GridMovementComponent.h"
 #include "IceBlockComponent.h"
 #include "GridRegistry.h"
+#include "PengoControllerComponent.h"
 
 void dae::MovementCommand::Execute()
 {
@@ -36,11 +37,23 @@ void dae::PushCommand::Execute()
 	auto* registry = movement->GetRegistry();
 	if (!registry) return;
 
-	const glm::ivec2 targetCell = movement->GetGridPos() + movement->GetFacingDirection();
+	const glm::ivec2 facingDir  = movement->GetFacingDirection();
+	const glm::ivec2 targetCell = movement->GetGridPos() + facingDir;
+	const glm::ivec2 gridSize   = movement->GetGridSize();
+
+	// Out of bounds: Pengo bumped the border wall, stun nearby Sno-bees
+	if (targetCell.x < 0 || targetCell.x >= gridSize.x ||
+	    targetCell.y < 0 || targetCell.y >= gridSize.y)
+	{
+		if (auto* pengo = m_Actor.GetComponent<PengoControllerComponent>())
+			pengo->WallStun();
+		return;
+	}
+
 	if (auto* obj = registry->GetAt(targetCell))
 	{
 		if (auto* block = obj->GetComponent<IceBlockComponent>())
-			block->TryPush(movement->GetFacingDirection(), registry, movement->GetGridSize());
+			block->TryPush(facingDir, registry, gridSize);
 	}
 }
 

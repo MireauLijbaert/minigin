@@ -45,7 +45,7 @@ static void load()
     bg->SetLocalPosition(bgX, bgY);
     scene.Add(std::move(bg));
 
-    // ---------- Grid root (all grid objects are children so world = gridRoot.pos + local) ----------
+    // ---------- Grid root ----------
     auto gridRoot = std::make_unique<dae::GameObject>();
     gridRoot->SetLocalPosition(bgX + 8.f, bgY + 8.f);
     dae::GameObject* gridRootPtr = gridRoot.get();
@@ -79,7 +79,7 @@ static void load()
     auto victoryText = std::make_unique<dae::TextComponent>(*victoryObj, victoryRenderPtr, "", font);
     auto* victoryTextPtr = victoryText.get();
     victoryObj->AddComponent(std::move(victoryText));
-    victoryObj->SetLocalPosition(100.f, 120.f); // rough center of playfield
+    victoryObj->SetLocalPosition(100.f, 120.f);
     scene.Add(std::move(victoryObj));
 
     // ---------- Game Manager ----------
@@ -90,9 +90,9 @@ static void load()
     scene.Add(std::move(gameManagerObj));
 
     gameManager->SetPlayer(pengoCompPtr, levelData.playerStartCell);
+    pengoCompPtr->SetGameManager(gameManager);
 
     // ---------- Sno-bees ----------
-    // Helper: create one Sno-bee at a given grid cell
     auto addSnoBee = [&](glm::ivec2 startCell)
     {
         auto snobee = std::make_unique<dae::GameObject>();
@@ -117,9 +117,18 @@ static void load()
         scene.Add(std::move(snobee));
     };
 
-    addSnoBee({ 1,  1 });
-    addSnoBee({ 11, 1 });
-    addSnoBee({ 1, 13 });
+    // Use spawn positions from level file (S cells); fall back to corners if none defined
+    if (!levelData.snoBeeSpawnCells.empty())
+    {
+        for (const auto& cell : levelData.snoBeeSpawnCells)
+            addSnoBee(cell);
+    }
+    else
+    {
+        addSnoBee({ 1,  1 });
+        addSnoBee({ 11, 1 });
+        addSnoBee({ 1, 13 });
+    }
 }
 
 int main(int, char* []) {

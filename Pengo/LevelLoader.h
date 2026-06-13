@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <vector>
 #include <glm/glm.hpp>
 #include "GridRegistry.h"
 
@@ -10,7 +11,8 @@ struct LevelData
 {
     std::unique_ptr<dae::GridRegistry> registry;
     glm::ivec2 playerStartCell{ 6, 6 };
-    glm::ivec2 gridSize{ 13, 13 };
+    glm::ivec2 gridSize{ 13, 15 };
+    std::vector<glm::ivec2> snoBeeSpawnCells;
 };
 
 class LevelLoader

@@ -21,7 +21,7 @@ namespace dae
         GameManager& operator=(const GameManager&) = delete;
         GameManager& operator=(GameManager&&)      = delete;
 
-        void Update() override {}
+        void Update() override;
         void Render() override {}
 
         void Notify(const Event& event, GameObject* actor) override;
@@ -31,6 +31,14 @@ namespace dae
         void OnSnoBeeKilled(SnoBeeComponent* snobee);
 
         bool IsLevelCleared() const { return m_LevelCleared; }
+        bool IsFrenzy()       const { return m_Frenzy; }
+        float GetBreakDuration() const;
+        void StunNearWall(glm::ivec2 facingDir, glm::ivec2 gridSize);
+
+        // Chase concurrency
+        bool CanStartChasing() const  { return m_ActiveChasers < 2; }
+        void RegisterChaseStart()     { ++m_ActiveChasers; }
+        void RegisterChaseEnd()       { if (m_ActiveChasers > 0) --m_ActiveChasers; }
 
     private:
         void DoRespawn();
@@ -41,8 +49,12 @@ namespace dae
         PengoControllerComponent* m_Pengo{ nullptr };
         glm::ivec2 m_PlayerSpawn{};
         std::vector<SnoBeeEntry> m_SnoBees;
-        int m_SnoBeesRemaining{ 0 };
-        bool m_LevelCleared{ false };
+        int   m_SnoBeesRemaining{ 0 };
+        int   m_ActiveChasers{ 0 };
+        bool  m_LevelCleared{ false };
+        bool  m_GameOver{ false };
+        float m_LevelTimer{ 0.f };
+        bool  m_Frenzy{ false };
         TextComponent* m_VictoryText{ nullptr };
     };
 }

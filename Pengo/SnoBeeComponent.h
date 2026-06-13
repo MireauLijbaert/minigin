@@ -31,6 +31,13 @@ namespace dae
         glm::ivec2 GetGridSize() const { return m_GridSize; }
         GridRegistry* GetRegistry() const { return m_Registry; }
         GameObject* GetPlayer() const { return m_Player; }
+        float GetBreakDuration() const;
+        bool  IsFrenzy() const;
+
+        // Chase concurrency helpers
+        bool CanChase() const;
+        void NotifyChaseStart();
+        void NotifyChaseEnd();
 
     private:
         void CheckPlayerCollision();

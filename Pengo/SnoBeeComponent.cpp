@@ -25,7 +25,6 @@ namespace dae
 
         m_StateMachine.Update();
 
-        // Apply any queued transition after the state has finished its Update
         if (m_PendingState)
             m_StateMachine.SetState(std::move(m_PendingState));
 
@@ -64,12 +63,11 @@ namespace dae
         auto* myMov = GetMovement();
         if (!myMov) return;
 
-        const glm::ivec2 myCell = myMov->GetGridPos();
+        const glm::ivec2 myCell   = myMov->GetGridPos();
         const glm::ivec2 myTarget = myMov->GetTargetGridPos();
 
         if (auto* block = IceBlockComponent::GetSlidingBlock())
         {
-            // Forgiving kill zone: die if current cell OR target cell (mid-move) is in path
             if (block->IsInSlidePath(myCell) || block->IsInSlidePath(myTarget))
                 Die();
         }
@@ -80,7 +78,6 @@ namespace dae
         if (m_Dead) return;
         m_Dead = true;
         if (m_GameManager) m_GameManager->OnSnoBeeKilled(this);
-        // Sno-bees use registerSelf=false so they are NOT in the registry, no Unregister needed
         GetOwner()->MarkForRemoval();
     }
 
@@ -90,6 +87,34 @@ namespace dae
         m_StateMachine.SetState(std::make_unique<SnoBeeWanderState>(*this));
         if (auto* mov = GetMovement())
             mov->WarpTo(spawnCell);
+    }
+
+    float SnoBeeComponent::GetBreakDuration() const
+    {
+        if (m_GameManager)
+            return m_GameManager->GetBreakDuration();
+        return 3.0f;
+    }
+
+    bool SnoBeeComponent::IsFrenzy() const
+    {
+        return m_GameManager && m_GameManager->IsFrenzy();
+    }
+
+    bool SnoBeeComponent::CanChase() const
+    {
+        if (!m_GameManager) return true;
+        return m_GameManager->CanStartChasing();
+    }
+
+    void SnoBeeComponent::NotifyChaseStart()
+    {
+        if (m_GameManager) m_GameManager->RegisterChaseStart();
+    }
+
+    void SnoBeeComponent::NotifyChaseEnd()
+    {
+        if (m_GameManager) m_GameManager->RegisterChaseEnd();
     }
 
     GridMovementComponent* SnoBeeComponent::GetMovement()

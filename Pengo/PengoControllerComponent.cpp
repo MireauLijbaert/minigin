@@ -1,6 +1,7 @@
 #include "PengoControllerComponent.h"
 #include "PengoStates.h"
 #include "GridMovementComponent.h"
+#include "GameManager.h"
 #include "InputManager.h"
 #include "Commands.h"
 #include "GameObject.h"
@@ -69,5 +70,13 @@ namespace dae
         m_StateMachine.SetState(std::make_unique<PengoIdleState>(*this));
         if (auto* mov = GetOwner()->GetComponent<GridMovementComponent>())
             mov->WarpTo(spawnCell);
+    }
+
+    void PengoControllerComponent::WallStun()
+    {
+        if (!m_GameManager) return;
+        auto* mov = GetOwner()->GetComponent<GridMovementComponent>();
+        if (!mov) return;
+        m_GameManager->StunNearWall(mov->GetFacingDirection(), mov->GetGridSize());
     }
 }
