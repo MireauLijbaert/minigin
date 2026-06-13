@@ -25,7 +25,17 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-static void load()
+static const char* LevelFile(int levelNum)
+{
+    switch (levelNum)
+    {
+    case 2:  return "Data/level2.txt";
+    case 3:  return "Data/level3.txt";
+    default: return "Data/level1.txt";
+    }
+}
+
+static void LoadLevel(int levelNum)
 {
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
 
@@ -34,8 +44,6 @@ static void load()
     const int tileSize = 16;
     const float moveSpeed = 85.f;
 
-    // Window logical size at 2x scale: 512 x 288
-    // Background image: 223 x 256
     const float bgX = std::floor((512.f - 223.f) / 2.f);
     const float bgY = std::floor((288.f - 256.f) / 2.f);
 
@@ -53,7 +61,9 @@ static void load()
     dae::GameObject* gridRootPtr = gridRoot.get();
     scene.Add(std::move(gridRoot));
 
-    static LevelData levelData = LevelLoader::Load("Data/level1.txt", scene, tileSize, gridRootPtr);
+    // Static so the registry outlives LoadLevel's stack frame
+    static LevelData levelData;
+    levelData = LevelLoader::Load(LevelFile(levelNum), scene, tileSize, gridRootPtr);
 
     // ---------- Player ----------
     auto player = std::make_unique<dae::GameObject>();
@@ -95,7 +105,7 @@ static void load()
     pengoCompPtr->SetGameManager(gameManager);
 
     // ---------- Sno-bees ----------
-    // Extract from static levelData so the lambda can capture by value 
+    // Extract from static levelData so lambda captures by value (static locals can't be captured)
     glm::ivec2 gridSize = levelData.gridSize;
     dae::GridRegistry* registry = levelData.registry.get();
 
@@ -123,7 +133,6 @@ static void load()
         scene.Add(std::move(snobee));
     };
 
-    // Use spawn positions from level file (S cells); fall back to corners if none defined
     if (!levelData.snoBeeSpawnCells.empty())
     {
         for (const auto& cell : levelData.snoBeeSpawnCells)
@@ -142,9 +151,21 @@ static void load()
         gameManager->AddEggCell(cell);
     gameManager->SetSnoBeeSpawnFn(addSnoBee);
 
+    // Level progression: cycle 1->2->3->1
+    int nextLevel = (levelNum % 3) + 1;
+    gameManager->SetOnLevelComplete([nextLevel]()
+    {
+        dae::SceneManager::GetInstance().RequestLoad([nextLevel]() { LoadLevel(nextLevel); });
+    });
+
     // Start background music
     dae::ServiceLocator::GetSoundSystem().PlayMusic(PengoSounds::BGM, -1);
     dae::ServiceLocator::GetSoundSystem().SetMusicVolume(PengoSounds::MUSIC_VOLUME);
+}
+
+static void load()
+{
+    LoadLevel(1);
 }
 
 int main(int, char* []) {

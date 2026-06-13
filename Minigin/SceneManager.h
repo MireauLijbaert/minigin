@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 #include "Scene.h"
 #include "Singleton.h"
 
@@ -12,6 +13,8 @@ namespace dae
 	{
 	public:
 		Scene& CreateScene();
+		void ClearAll();
+		void RequestLoad(std::function<void()> loadFn);
 
 		void Update();
 		void Render();
@@ -19,5 +22,6 @@ namespace dae
 		friend class Singleton<SceneManager>;
 		SceneManager() = default;
 		std::vector<std::unique_ptr<Scene>> m_scenes{};
+		std::function<void()> m_pendingLoad;
 	};
 }

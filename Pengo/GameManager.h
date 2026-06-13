@@ -37,6 +37,7 @@ namespace dae
         void SetRegistry(GridRegistry* registry) { m_Registry = registry; }
         void AddEggCell(glm::ivec2 cell) { m_EggCells.push_back(cell); }
         void SetSnoBeeSpawnFn(SnoBeeSpawnFn fn) { m_SpawnFn = std::move(fn); }
+        void SetOnLevelComplete(std::function<void()> fn) { m_OnLevelComplete = std::move(fn); }
 
         bool IsLevelCleared() const { return m_LevelCleared; }
         bool IsFrenzy()       const { return m_Frenzy; }
@@ -69,5 +70,7 @@ namespace dae
         GridRegistry* m_Registry{ nullptr };
         std::vector<glm::ivec2> m_EggCells;
         SnoBeeSpawnFn m_SpawnFn;
+        std::function<void()> m_OnLevelComplete;
+        float m_LevelClearDelay{ 0.f };
     };
 }

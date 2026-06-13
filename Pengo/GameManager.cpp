@@ -23,7 +23,18 @@ namespace dae
 
     void GameManager::Update()
     {
-        if (m_LevelCleared || m_GameOver) return;
+        if (m_GameOver) return;
+
+        if (m_LevelCleared)
+        {
+            m_LevelClearDelay += Time::GetInstance().GetDeltaTime();
+            if (m_LevelClearDelay >= 3.0f && m_OnLevelComplete)
+            {
+                auto fn = std::move(m_OnLevelComplete);
+                fn(); // calls RequestLoad, deferred to next frame, safe
+            }
+            return;
+        }
 
         m_LevelTimer += Time::GetInstance().GetDeltaTime();
         if (!m_Frenzy && m_LevelTimer >= 60.f) {

@@ -59,6 +59,6 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
         ++row;
     }
 
-    data.gridSize = { maxCol, row };
+    data.gridSize = { std::max(maxCol, 13), std::max(row, 15) };
     return data;
 }
