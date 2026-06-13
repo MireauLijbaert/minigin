@@ -1,0 +1,72 @@
+#include "IceBlockComponent.h"
+#include "GridRegistry.h"
+#include "GameObject.h"
+#include "TimeSingleton.h"
+#include <glm/glm.hpp>
+
+namespace dae
+{
+    IceBlockComponent::IceBlockComponent(GameObject& owner, glm::ivec2 gridPos, int tileSize, float slideSpeed)
+        : BaseComponent(owner)
+        , m_GridPos{ gridPos }
+        , m_PixelPos{ float(gridPos.x * tileSize), float(gridPos.y * tileSize) }
+        , m_TargetPixelPos{ m_PixelPos }
+        , m_TileSize{ tileSize }
+        , m_SlideSpeed{ slideSpeed }
+    {
+    }
+
+    bool IceBlockComponent::TryPush(glm::ivec2 direction, GridRegistry* registry, glm::ivec2 gridSize)
+    {
+        if (m_IsSliding) return false;
+
+        // Must be able to move at least one step
+        const glm::ivec2 firstStep = m_GridPos + direction;
+        if (!InBounds(firstStep, gridSize) || !registry->IsEmpty(firstStep))
+            return false;
+
+        // Slide all the way until blocked
+        glm::ivec2 finalPos = firstStep;
+        while (true)
+        {
+            const glm::ivec2 next = finalPos + direction;
+            if (!InBounds(next, gridSize) || !registry->IsEmpty(next))
+                break;
+            finalPos = next;
+        }
+
+        // Update registry immediately so collision is correct during animation
+        registry->Move(m_GridPos, finalPos);
+        m_GridPos = finalPos;
+
+        m_TargetPixelPos = { float(finalPos.x * m_TileSize), float(finalPos.y * m_TileSize) };
+        m_IsSliding = true;
+        return true;
+    }
+
+    void IceBlockComponent::Update()
+    {
+        if (!m_IsSliding) return;
+
+        const glm::vec2 toTarget = m_TargetPixelPos - m_PixelPos;
+        const float dist = glm::length(toTarget);
+        const float step = m_SlideSpeed * Time::GetInstance().GetDeltaTime();
+
+        if (dist <= step)
+        {
+            m_PixelPos = m_TargetPixelPos;
+            m_IsSliding = false;
+        }
+        else
+        {
+            m_PixelPos += (toTarget / dist) * step;
+        }
+
+        GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
+    }
+
+    bool IceBlockComponent::InBounds(glm::ivec2 pos, glm::ivec2 gridSize)
+    {
+        return pos.x >= 0 && pos.x < gridSize.x && pos.y >= 0 && pos.y < gridSize.y;
+    }
+}

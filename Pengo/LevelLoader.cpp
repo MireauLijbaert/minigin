@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "GameObject.h"
 #include "RenderComponent.h"
+#include "IceBlockComponent.h"
 #include "GridRegistry.h"
 #include <fstream>
 #include <string>
@@ -33,6 +34,7 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
                 auto render = std::make_unique<dae::RenderComponent>(*obj);
                 render->SetTexture("IceCube.png");
                 obj->AddComponent(std::move(render));
+                obj->AddComponent(std::make_unique<dae::IceBlockComponent>(*obj, cell, tileSize));
                 obj->SetLocalPosition(float(col * tileSize), float(row * tileSize));
                 if (gridRoot)
                     obj->SetParent(gridRoot, false);
