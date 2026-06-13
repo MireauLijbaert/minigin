@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include "GridRegistry.h"
 
-namespace dae { class Scene; }
+namespace dae { class Scene; class GameObject; }
 
 struct LevelData
 {
@@ -16,5 +16,5 @@ struct LevelData
 class LevelLoader
 {
 public:
-    static LevelData Load(const std::string& filePath, dae::Scene& scene, int tileSize);
+    static LevelData Load(const std::string& filePath, dae::Scene& scene, int tileSize, dae::GameObject* gridRoot = nullptr);
 };

@@ -7,7 +7,7 @@
 #include <string>
 #include <algorithm>
 
-LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int tileSize)
+LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int tileSize, dae::GameObject* gridRoot)
 {
     LevelData data;
     data.registry = std::make_unique<dae::GridRegistry>();
@@ -34,6 +34,8 @@ LevelData LevelLoader::Load(const std::string& filePath, dae::Scene& scene, int 
                 render->SetTexture("IceCube.png");
                 obj->AddComponent(std::move(render));
                 obj->SetLocalPosition(float(col * tileSize), float(row * tileSize));
+                if (gridRoot)
+                    obj->SetParent(gridRoot, false);
 
                 data.registry->Register(cell, obj.get());
                 scene.Add(std::move(obj));

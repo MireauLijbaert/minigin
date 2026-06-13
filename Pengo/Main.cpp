@@ -16,6 +16,7 @@
 #include "GridMovementComponent.h"
 #include "LevelLoader.h"
 
+#include <cmath>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -28,7 +29,26 @@ static void load()
     const int tileSize = 16;
     const float moveSpeed = 128.f;
 
-    static LevelData levelData = LevelLoader::Load("Data/level1.txt", scene, tileSize);
+    // Window logical size at 2x scale: 512 x 288
+    // Background image: 223 x 256
+    const float bgX = std::floor((512.f - 223.f) / 2.f);
+    const float bgY = std::floor((288.f - 256.f) / 2.f);
+
+    // ---------- Background ----------
+    auto bg = std::make_unique<dae::GameObject>();
+    auto bgRender = std::make_unique<dae::RenderComponent>(*bg);
+    bgRender->SetTexture("FullBackgroundPengo.png");
+    bg->AddComponent(std::move(bgRender));
+    bg->SetLocalPosition(bgX, bgY);
+    scene.Add(std::move(bg));
+
+    // ---------- Grid root (all grid objects are children so world = gridRoot.pos + local) ----------
+    auto gridRoot = std::make_unique<dae::GameObject>();
+    gridRoot->SetLocalPosition(bgX + 8.f, bgY + 8.f);
+    dae::GameObject* gridRootPtr = gridRoot.get();
+    scene.Add(std::move(gridRoot));
+
+    static LevelData levelData = LevelLoader::Load("Data/level1.txt", scene, tileSize, gridRootPtr);
 
     // ---------- Player ----------
     auto player = std::make_unique<dae::GameObject>();
@@ -40,6 +60,7 @@ static void load()
         *player, tileSize, levelData.playerStartCell, levelData.gridSize, moveSpeed, levelData.registry.get()
     ));
     dae::GameObject* playerPtr = player.get();
+    player->SetParent(gridRootPtr, false);
     scene.Add(std::move(player));
 
     // ---------- Input ----------
