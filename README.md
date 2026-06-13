@@ -8,5 +8,4 @@ Minigin is a very small project using [SDL3](https://www.libsdl.org/) and [glm](
 
 Source control: https://github.com/MireauLijbaert/minigin
 
-```<iframe style="position: absolute; top: 0px; left: 0px; width: 1024px; height: 576px;" src="https://<username>.github.io/<repository>/" loading="lazy"></iframe>```
 
