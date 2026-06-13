@@ -30,7 +30,7 @@ static void load()
     dae::Renderer::GetInstance().SetScale(2.f);
 
     const int tileSize = 16;
-    const float moveSpeed = 128.f;
+    const float moveSpeed = 85.f;
 
     // Window logical size at 2x scale: 512 x 288
     // Background image: 223 x 256
@@ -102,7 +102,7 @@ static void load()
         snobee->AddComponent(std::move(render));
 
         snobee->AddComponent(std::make_unique<dae::GridMovementComponent>(
-            *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.6f, levelData.registry.get(), false
+            *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.65f, levelData.registry.get(), false
         ));
         auto snobeeBehavior = std::make_unique<dae::SnoBeeComponent>(
             *snobee, levelData.gridSize, levelData.registry.get(), playerPtr, gameManager

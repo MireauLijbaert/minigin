@@ -21,7 +21,7 @@ namespace dae
         if (m_LevelCleared || m_GameOver) return;
 
         m_LevelTimer += Time::GetInstance().GetDeltaTime();
-        if (!m_Frenzy && m_LevelTimer >= 120.f)
+        if (!m_Frenzy && m_LevelTimer >= 60.f)
             m_Frenzy = true;
     }
 
@@ -57,7 +57,7 @@ namespace dae
 
     float GameManager::GetBreakDuration() const
     {
-        // Normal: 3s. Frenzy (2 minute mark): 0.3s
+        // Normal: 3s. Frenzy (60s sudden death): 0.3s
         return m_Frenzy ? 0.3f : 3.0f;
     }
 
