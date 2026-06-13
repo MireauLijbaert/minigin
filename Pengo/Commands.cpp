@@ -7,11 +7,14 @@
 #include "GridRegistry.h"
 #include "PengoControllerComponent.h"
 
+// Brief lock so Pengo can't move/push again immediately (push animation)
+static constexpr float kPushLockDuration = 0.3f;
+
 void dae::MovementCommand::Execute()
 {
-	m_direction = glm::normalize(m_direction); // Normalize the direction vector to ensure consistent movement speed regardless of the input magnitude.
-	m_direction *= m_speed * dae::Time::GetInstance().GetDeltaTime(); // Scale the direction by the maximum speed and delta time to get the movement vector for this frame.
-	m_actor->SetLocalPosition(m_actor->GetLocalPosition().GetPosition() + m_direction); // Update the owner's position by adding the movement vector to the current position.
+	m_direction = glm::normalize(m_direction);
+	m_direction *= m_speed * dae::Time::GetInstance().GetDeltaTime();
+	m_actor->SetLocalPosition(m_actor->GetLocalPosition().GetPosition() + m_direction);
 }
 
 dae::GridMoveCommand::GridMoveCommand(GameObject& actor, glm::ivec2 direction)
@@ -32,7 +35,7 @@ dae::PushCommand::PushCommand(GameObject& actor)
 void dae::PushCommand::Execute()
 {
 	auto* movement = m_Actor.GetComponent<GridMovementComponent>();
-	if (!movement || movement->IsMoving()) return;
+	if (!movement || movement->IsMoving() || movement->IsLocked()) return;
 
 	auto* registry = movement->GetRegistry();
 	if (!registry) return;
@@ -47,13 +50,17 @@ void dae::PushCommand::Execute()
 	{
 		if (auto* pengo = m_Actor.GetComponent<PengoControllerComponent>())
 			pengo->WallStun();
+		movement->LockFor(kPushLockDuration);
 		return;
 	}
 
 	if (auto* obj = registry->GetAt(targetCell))
 	{
 		if (auto* block = obj->GetComponent<IceBlockComponent>())
+		{
 			block->TryPush(facingDir, registry, gridSize);
+			movement->LockFor(kPushLockDuration);
+		}
 	}
 }
 
@@ -61,16 +68,12 @@ void dae::TakeDamageCommand::Execute()
 {
 	auto health = m_Actor.GetComponent<HealthComponent>();
 	if (health)
-	{
 		health->LoseLife();
-	}
 }
 
 void dae::IncreaseScoreCommand::Execute()
 {
 	auto score = m_Actor.GetComponent<ScoreComponent>();
 	if (score)
-	{
 		score->AddScore(m_Amount);
-	}
 }

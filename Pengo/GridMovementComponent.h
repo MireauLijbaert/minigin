@@ -16,12 +16,18 @@ namespace dae
 
         // Called by input commands
         void SetDirection(glm::ivec2 direction);
-
         void WarpTo(glm::ivec2 cell);
+
+        // Lock movement input for a duration (e.g. push animation)
+        void LockFor(float duration) { m_LockTimer = duration; }
+        bool IsLocked()        const { return m_LockTimer > 0.f; }
+
+        // Speed multiplier (1.0 = normal, 1.5 = frenzy)
+        void  SetSpeedMultiplier(float mult) { m_MoveSpeed = m_BaseSpeed * mult; }
 
         glm::ivec2 GetGridPos() const { return m_GridPos; }
         glm::ivec2 GetTargetGridPos() const { return m_TargetGridPos; }
-        glm::ivec2 GetFacingDirection() const { return m_FacingDirection; }
+        glm::ivec2 GetFacingDirection()const { return m_FacingDirection; }
         glm::ivec2 GetGridSize() const { return m_GridSize; }
         GridRegistry* GetRegistry() const { return m_Registry; }
         bool IsMoving() const { return m_IsMoving; }
@@ -35,7 +41,9 @@ namespace dae
         bool m_RegisterSelf;
         int m_TileSize;
         glm::ivec2 m_GridSize;
+        float m_BaseSpeed;
         float m_MoveSpeed;
+        float m_LockTimer{ 0.f };
         GridRegistry* m_Registry;
 
         glm::ivec2 m_FacingDirection{ 0, 1 };

@@ -42,6 +42,7 @@ namespace dae
     private:
         void CheckPlayerCollision();
         void CheckBlockCollision();
+        void ApplyFrenzySpeedIfNeeded();
 
         GridMovementComponent* m_Movement{ nullptr };
         StateMachine m_StateMachine;
@@ -50,7 +51,8 @@ namespace dae
         GameObject* m_Player;
         glm::ivec2 m_GridSize;
         GridRegistry* m_Registry;
-        GameManager*  m_GameManager{ nullptr };
+        GameManager* m_GameManager{ nullptr };
         bool m_Dead{ false };
+        bool m_FrenzySpeedApplied{ false };
     };
 }

@@ -57,8 +57,7 @@ namespace dae
 
     float GameManager::GetBreakDuration() const
     {
-        // Normal: 3s. Frenzy (60s sudden death): 0.3s
-        return m_Frenzy ? 0.3f : 3.0f;
+        return 0.5f;
     }
 
     void GameManager::StunNearWall(glm::ivec2 facingDir, glm::ivec2 gridSize)

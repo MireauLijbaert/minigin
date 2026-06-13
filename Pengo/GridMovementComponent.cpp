@@ -10,6 +10,7 @@ namespace dae
         , m_RegisterSelf{ registerSelf }
         , m_TileSize{ tileSize }
         , m_GridSize{ gridSize }
+        , m_BaseSpeed{ moveSpeed }
         , m_MoveSpeed{ moveSpeed }
         , m_Registry{ registry }
         , m_GridPos{ startGridPos }
@@ -23,6 +24,11 @@ namespace dae
 
     void GridMovementComponent::Update()
     {
+        const float dt = Time::GetInstance().GetDeltaTime();
+
+        if (m_LockTimer > 0.f)
+            m_LockTimer -= dt;
+
         m_BufferedDirection = { 0, 0 };
 
         if (!m_IsMoving)
@@ -31,7 +37,7 @@ namespace dae
         const glm::vec2 target{ float(m_TargetGridPos.x * m_TileSize), float(m_TargetGridPos.y * m_TileSize) };
         const glm::vec2 toTarget = target - m_PixelPos;
         const float distToTarget = glm::length(toTarget);
-        const float step = m_MoveSpeed * Time::GetInstance().GetDeltaTime();
+        const float step = m_MoveSpeed * dt;
 
         if (distToTarget <= step)
         {
@@ -59,7 +65,10 @@ namespace dae
 
     void GridMovementComponent::SetDirection(glm::ivec2 direction)
     {
-        m_FacingDirection = direction; // always update facing, even if blocked or mid-move
+        // Honour facing update always, but block movement while locked
+        m_FacingDirection = direction;
+        if (m_LockTimer > 0.f) return;
+
         if (!m_IsMoving)
             TryMove(direction);
         else
@@ -98,6 +107,7 @@ namespace dae
         m_TargetGridPos = cell;
         m_PixelPos = { float(cell.x * m_TileSize), float(cell.y * m_TileSize) };
         m_IsMoving = false;
+        m_LockTimer = 0.f;
         m_BufferedDirection = { 0, 0 };
         GetOwner()->SetLocalPosition(m_PixelPos.x, m_PixelPos.y);
     }

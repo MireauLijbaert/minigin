@@ -23,6 +23,8 @@ namespace dae
     {
         if (m_Dead) return;
 
+        ApplyFrenzySpeedIfNeeded();
+
         m_StateMachine.Update();
 
         if (m_PendingState)
@@ -30,6 +32,16 @@ namespace dae
 
         CheckPlayerCollision();
         CheckBlockCollision();
+    }
+
+    void SnoBeeComponent::ApplyFrenzySpeedIfNeeded()
+    {
+        if (m_FrenzySpeedApplied) return;
+        if (!IsFrenzy()) return;
+
+        m_FrenzySpeedApplied = true;
+        if (auto* mov = GetMovement())
+            mov->SetSpeedMultiplier(1.5f); // frenzy: 50% faster
     }
 
     void SnoBeeComponent::CheckPlayerCollision()
@@ -84,16 +96,22 @@ namespace dae
     void SnoBeeComponent::Respawn(glm::ivec2 spawnCell)
     {
         m_Dead = false;
+        m_FrenzySpeedApplied = false;
+
         m_StateMachine.SetState(std::make_unique<SnoBeeWanderState>(*this));
+
         if (auto* mov = GetMovement())
+        {
+            mov->SetSpeedMultiplier(1.f); // reset to base speed
             mov->WarpTo(spawnCell);
+        }
     }
 
     float SnoBeeComponent::GetBreakDuration() const
     {
         if (m_GameManager)
             return m_GameManager->GetBreakDuration();
-        return 3.0f;
+        return 0.5f;
     }
 
     bool SnoBeeComponent::IsFrenzy() const
