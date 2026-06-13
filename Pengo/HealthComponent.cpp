@@ -12,7 +12,5 @@ void dae::HealthComponent::LoseLife()
     event.nbArgs = 1;
     event.args[0] = EventArg{ .intValue = m_Lives };
     m_Subject.NotifyObservers(event, GetOwner());
-
-    // Always die when hit, respawn / game-over handled externally via the event
-    GetOwner()->MarkForRemoval();
+    // Respawn vs game-over is handled by whoever observes the LifeChanged event
 }

@@ -17,6 +17,8 @@ namespace dae
         // Called by input commands
         void SetDirection(glm::ivec2 direction);
 
+        void Respawn(glm::ivec2 spawnCell);
+
         glm::ivec2 GetGridPos() const { return m_GridPos; }
         glm::ivec2 GetTargetGridPos() const { return m_TargetGridPos; }
         glm::ivec2 GetFacingDirection() const { return m_FacingDirection; }
@@ -30,6 +32,7 @@ namespace dae
     private:
         void TryMove(glm::ivec2 direction);
 
+        bool m_RegisterSelf;
         int m_TileSize;
         glm::ivec2 m_GridSize;
         float m_MoveSpeed;

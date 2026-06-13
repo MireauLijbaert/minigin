@@ -79,9 +79,17 @@ namespace dae
     {
         if (m_Dead) return;
         m_Dead = true;
-        if (m_GameManager) m_GameManager->OnSnoBeeKilled();
+        if (m_GameManager) m_GameManager->OnSnoBeeKilled(this);
         // Sno-bees use registerSelf=false so they are NOT in the registry, no Unregister needed
         GetOwner()->MarkForRemoval();
+    }
+
+    void SnoBeeComponent::Respawn(glm::ivec2 spawnCell)
+    {
+        m_Dead = false;
+        m_StateMachine.SetState(std::make_unique<SnoBeeWanderState>(*this));
+        if (auto* mov = GetMovement())
+            mov->Respawn(spawnCell);
     }
 
     GridMovementComponent* SnoBeeComponent::GetMovement()

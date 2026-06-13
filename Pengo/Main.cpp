@@ -90,12 +90,13 @@ static void load()
     scene.Add(std::move(victoryObj));
 
     // ---------- Game Manager ----------
-    const int snoBeeCount = 3;
     auto gameManagerObj = std::make_unique<dae::GameObject>();
-    auto gameManagerComp = std::make_unique<dae::GameManager>(*gameManagerObj, snoBeeCount, victoryTextPtr);
+    auto gameManagerComp = std::make_unique<dae::GameManager>(*gameManagerObj, victoryTextPtr);
     dae::GameManager* gameManager = gameManagerComp.get();
     gameManagerObj->AddComponent(std::move(gameManagerComp));
     scene.Add(std::move(gameManagerObj));
+
+    gameManager->SetPlayer(playerPtr, levelData.playerStartCell);
 
     // ---------- Sno-bees ----------
     // Helper: create one Sno-bee at a given grid cell
@@ -110,9 +111,13 @@ static void load()
         snobee->AddComponent(std::make_unique<dae::GridMovementComponent>(
             *snobee, tileSize, startCell, levelData.gridSize, moveSpeed * 0.6f, levelData.registry.get(), false
         ));
-        snobee->AddComponent(std::make_unique<dae::SnoBeeComponent>(
+        auto snobeeBehavior = std::make_unique<dae::SnoBeeComponent>(
             *snobee, levelData.gridSize, levelData.registry.get(), playerPtr, gameManager
-        ));
+        );
+        auto* snobeeBehaviorPtr = snobeeBehavior.get();
+        snobee->AddComponent(std::move(snobeeBehavior));
+
+        gameManager->AddSnoBee(snobeeBehaviorPtr, startCell);
 
         snobee->SetLocalPosition(float(startCell.x * tileSize), float(startCell.y * tileSize));
         snobee->SetParent(gridRootPtr, false);

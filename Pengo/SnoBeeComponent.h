@@ -25,6 +25,7 @@ namespace dae
 
         void Stun(float duration = 2.f);
         void Die();
+        void Respawn(glm::ivec2 spawnCell);
 
         GridMovementComponent* GetMovement();
         glm::ivec2 GetGridSize() const { return m_GridSize; }
