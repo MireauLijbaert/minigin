@@ -28,6 +28,8 @@ namespace dae
 
 		std::vector<std::unique_ptr<GameObject>> m_objects{};
 		std::vector<std::unique_ptr<GameObject>> m_objectsToRemove{};
+		std::vector<std::unique_ptr<GameObject>> m_pendingAdd{};
+		bool m_isUpdating{ false };
 	};
 
 }
