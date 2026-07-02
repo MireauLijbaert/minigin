@@ -196,78 +196,26 @@ target_link_libraries(minigin PUBLIC
 if(EMSCRIPTEN)
   set(TARGET_NAME minigin_web)
   add_executable(${TARGET_NAME}
-    Pengo/Main.cpp
-    "Pengo/Commands.h"
-    "Pengo/Commands.cpp"
-    "Pengo/GridMovementComponent.h"
-    "Pengo/GridMovementComponent.cpp"
-    "Pengo/GridRegistry.h"
-    "Pengo/GridRegistry.cpp"
-    "Pengo/LevelLoader.h"
-    "Pengo/LevelLoader.cpp"
-    "Pengo/IceBlockComponent.h"
-    "Pengo/IceBlockComponent.cpp"
-    "Pengo/SnoBeeComponent.h"
-    "Pengo/SnoBeeComponent.cpp"
-    "Pengo/SnoBeeStates.h"
-    "Pengo/SnoBeeStates.cpp"
-    "Pengo/BaseState.h"
-    "Pengo/StateMachine.h"
-    "Pengo/StateMachine.cpp"
-    "Pengo/HealthComponent.h"
-    "Pengo/HealthComponent.cpp"
-    "Pengo/HealthDisplayComponent.h"
-    "Pengo/HealthDisplayComponent.cpp"
-    "Pengo/ScoreComponent.h"
-    "Pengo/ScoreComponent.cpp"
-    "Pengo/ScoreDisplayComponent.h"
-    "Pengo/ScoreDisplayComponent.cpp"
-    "Pengo/PengoStates.h"
-    "Pengo/PengoStates.cpp"
-    "Pengo/PengoControllerComponent.h"
-    "Pengo/PengoControllerComponent.cpp"
-    "Pengo/GameManager.h"
-    "Pengo/GameManager.cpp"
+    BurgerTime/Main.cpp
+    "BurgerTime/BaseState.h"
+    "BurgerTime/StateMachine.h"
+    "BurgerTime/StateMachine.cpp"
+    "BurgerTime/HealthComponent.h"
+    "BurgerTime/HealthComponent.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
   add_executable(${TARGET_NAME} WIN32
-    Pengo/Main.cpp
-    "Pengo/Commands.h"
-    "Pengo/Commands.cpp"
-    "Pengo/GridMovementComponent.h"
-    "Pengo/GridMovementComponent.cpp"
-    "Pengo/GridRegistry.h"
-    "Pengo/GridRegistry.cpp"
-    "Pengo/LevelLoader.h"
-    "Pengo/LevelLoader.cpp"
-    "Pengo/IceBlockComponent.h"
-    "Pengo/IceBlockComponent.cpp"
-    "Pengo/SnoBeeComponent.h"
-    "Pengo/SnoBeeComponent.cpp"
-    "Pengo/SnoBeeStates.h"
-    "Pengo/SnoBeeStates.cpp"
-    "Pengo/BaseState.h"
-    "Pengo/StateMachine.h"
-    "Pengo/StateMachine.cpp"
-    "Pengo/HealthComponent.h"
-    "Pengo/HealthComponent.cpp"
-    "Pengo/HealthDisplayComponent.h"
-    "Pengo/HealthDisplayComponent.cpp"
-    "Pengo/ScoreComponent.h"
-    "Pengo/ScoreComponent.cpp"
-    "Pengo/ScoreDisplayComponent.h"
-    "Pengo/ScoreDisplayComponent.cpp"
-    "Pengo/PengoStates.h"
-    "Pengo/PengoStates.cpp"
-    "Pengo/PengoControllerComponent.h"
-    "Pengo/PengoControllerComponent.cpp"
-    "Pengo/GameManager.h"
-    "Pengo/GameManager.cpp"
+    BurgerTime/Main.cpp
+    "BurgerTime/BaseState.h"
+    "BurgerTime/StateMachine.h"
+    "BurgerTime/StateMachine.cpp"
+    "BurgerTime/HealthComponent.h"
+    "BurgerTime/HealthComponent.cpp"
   )
 endif()
 
-target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Pengo/)
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/BurgerTime/)
 
 target_link_libraries(${TARGET_NAME} PRIVATE minigin)
 
