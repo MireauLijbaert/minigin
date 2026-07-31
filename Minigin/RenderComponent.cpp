@@ -15,13 +15,12 @@ dae::RenderComponent::~RenderComponent()
 
 void dae::RenderComponent::Render()
 {
-	if (!m_texture)
-	{
-		return;
-	} 
-
-	const auto& pos{ GetOwner()->GetWorldPosition().GetPosition()};
-	dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y);
+	if (!m_texture) return;
+	const auto& pos = GetOwner()->GetWorldPosition().GetPosition();
+	if (m_width > 0.f && m_height > 0.f)
+		dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y, m_width, m_height);
+	else
+		dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y);
 }
 
 void dae::RenderComponent::SetTexture(const std::string& filename)

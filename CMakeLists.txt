@@ -206,6 +206,10 @@ if(EMSCRIPTEN)
     "BurgerTime/LevelMap.cpp"
     "BurgerTime/LevelLoader.h"
     "BurgerTime/LevelLoader.cpp"
+    "BurgerTime/PlatformMovementComponent.h"
+    "BurgerTime/PlatformMovementComponent.cpp"
+    "BurgerTime/BurgerPieceComponent.h"
+    "BurgerTime/BurgerPieceComponent.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
@@ -220,6 +224,10 @@ else()
     "BurgerTime/LevelMap.cpp"
     "BurgerTime/LevelLoader.h"
     "BurgerTime/LevelLoader.cpp"
+    "BurgerTime/PlatformMovementComponent.h"
+    "BurgerTime/PlatformMovementComponent.cpp"
+    "BurgerTime/BurgerPieceComponent.h"
+    "BurgerTime/BurgerPieceComponent.cpp"
   )
 endif()
 

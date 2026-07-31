@@ -1,57 +1,44 @@
 #include "LevelMap.h"
-#include <stdexcept>
+#include <cmath>
 
 namespace dae
 {
-    LevelMap::LevelMap(int cols, int rows)
-        : m_Cells(cols * rows)
-        , m_Size{ cols, rows }
+    void LevelMap::AddPlatform(int y, int x0, int x1) { m_platforms.push_back({ y, x0, x1 }); }
+    void LevelMap::AddLadder(int x, int y0, int y1)   { m_ladders.push_back({ x, y0, y1 }); }
+
+    const PlatformRow* LevelMap::FindPlatform(float spriteX, float spriteY, float threshold) const
     {
+        const PlatformRow* best = nullptr;
+        float bestDist = threshold + 1.f;
+        for (const auto& p : m_platforms)
+        {
+            float dist = std::abs(spriteY - static_cast<float>(p.y));
+            if (dist < bestDist
+                && spriteX >= static_cast<float>(p.x0) - threshold
+                && spriteX <= static_cast<float>(p.x1) + threshold)
+            {
+                bestDist = dist;
+                best = &p;
+            }
+        }
+        return best;
     }
 
-    bool LevelMap::InBounds(glm::ivec2 cell) const
+    const LadderCol* LevelMap::FindLadder(float spriteX, float spriteY, float threshold) const
     {
-        return cell.x >= 0 && cell.x < m_Size.x
-            && cell.y >= 0 && cell.y < m_Size.y;
-    }
-
-    CellFlags& LevelMap::At(glm::ivec2 cell)
-    {
-        return m_Cells[cell.y * m_Size.x + cell.x];
-    }
-
-    const CellFlags& LevelMap::At(glm::ivec2 cell) const
-    {
-        return m_Cells[cell.y * m_Size.x + cell.x];
-    }
-
-    bool LevelMap::HasPlatform(glm::ivec2 cell) const
-    {
-        return InBounds(cell) && At(cell).platform;
-    }
-
-    bool LevelMap::HasLadder(glm::ivec2 cell) const
-    {
-        return InBounds(cell) && At(cell).ladder;
-    }
-
-    bool LevelMap::HasPlate(glm::ivec2 cell) const
-    {
-        return InBounds(cell) && At(cell).plate;
-    }
-
-    void LevelMap::SetPlatform(glm::ivec2 cell, bool v)
-    {
-        if (InBounds(cell)) At(cell).platform = v;
-    }
-
-    void LevelMap::SetLadder(glm::ivec2 cell, bool v)
-    {
-        if (InBounds(cell)) At(cell).ladder = v;
-    }
-
-    void LevelMap::SetPlate(glm::ivec2 cell, bool v)
-    {
-        if (InBounds(cell)) At(cell).plate = v;
+        const LadderCol* best = nullptr;
+        float bestDist = threshold + 1.f;
+        for (const auto& l : m_ladders)
+        {
+            float dist = std::abs(spriteX - static_cast<float>(l.x));
+            if (dist < bestDist
+                && spriteY >= static_cast<float>(l.y0)
+                && spriteY <= static_cast<float>(l.y1))
+            {
+                bestDist = dist;
+                best = &l;
+            }
+        }
+        return best;
     }
 }

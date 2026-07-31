@@ -5,24 +5,19 @@
 #include <glm/glm.hpp>
 #include "LevelMap.h"
 
-namespace dae { class Scene; class GameObject; }
-
-enum class IngredientType { TopBun, Patty, Lettuce, BottomBun };
-
-struct IngredientSpawn
+struct BurgerPieceDef
 {
-    glm::ivec2 cell;
-    IngredientType type;
+    int type;     // 0=top_bun, 1=patty, 2=lettuce, 3=bot_bun
+    int row;      // platform row 0-11
+    int startCol; // first of 4 grid columns, 0-5
 };
 
 struct LevelData
 {
     std::unique_ptr<dae::LevelMap> map;
-    glm::ivec2 gridSize{ 13, 15 };
-    glm::ivec2 playerStartCell{ 6, 7 };
-    std::vector<glm::ivec2> enemySpawnCells;
-    std::vector<IngredientSpawn> ingredients;
-    std::vector<glm::ivec2> plateCells;
+    glm::ivec2 spriteSize{ 208, 187 };
+    glm::vec2 playerStartSprite{ 104.f, 1.f }; // sprite pixel coords (feet center)
+    std::vector<BurgerPieceDef> burgers;
 };
 
 class LevelLoader

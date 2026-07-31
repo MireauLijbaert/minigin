@@ -20,10 +20,12 @@ namespace dae
 		void Update() override {};
 		void Render() override;
 		void SetTexture(const std::string& filename);
-		void SetTexture(const std::shared_ptr<Texture2D>& texture); // Overload to set texture directly, useful for text rendering
+		void SetTexture(const std::shared_ptr<Texture2D>& texture);
+		void SetSize(float w, float h) { m_width = w; m_height = h; }
 
 	private:
-
 		std::shared_ptr<Texture2D> m_texture{};
+		float m_width{ 0.f };
+		float m_height{ 0.f };
 	};
 }

@@ -1,37 +1,27 @@
 #pragma once
-#include <glm/glm.hpp>
 #include <vector>
 
 namespace dae
 {
-    struct CellFlags
-    {
-        bool platform = false;
-        bool ladder = false;
-        bool plate = false;
-    };
+    struct PlatformRow { int y, x0, x1; };
+    struct LadderCol   { int x, y0, y1; };
 
     class LevelMap
     {
     public:
-        LevelMap(int cols, int rows);
+        void AddPlatform(int y, int x0, int x1);
+        void AddLadder(int x, int y0, int y1);
 
-        bool HasPlatform(glm::ivec2 cell) const;
-        bool HasLadder(glm::ivec2 cell) const;
-        bool HasPlate(glm::ivec2 cell) const;
+        const std::vector<PlatformRow>& GetPlatforms() const { return m_platforms; }
+        const std::vector<LadderCol>&   GetLadders()   const { return m_ladders; }
 
-        void SetPlatform(glm::ivec2 cell, bool v);
-        void SetLadder(glm::ivec2 cell, bool v);
-        void SetPlate(glm::ivec2 cell, bool v);
-
-        glm::ivec2 GetSize() const { return m_Size; }
-        bool InBounds(glm::ivec2 cell) const;
+        // Returns nearest platform within threshold whose x range covers spriteX, or nullptr
+        const PlatformRow* FindPlatform(float spriteX, float spriteY, float threshold) const;
+        // Returns nearest ladder within threshold whose y range covers spriteY, or nullptr
+        const LadderCol*   FindLadder(float spriteX, float spriteY, float threshold) const;
 
     private:
-        CellFlags& At(glm::ivec2 cell);
-        const CellFlags& At(glm::ivec2 cell) const;
-
-        std::vector<CellFlags> m_Cells;
-        glm::ivec2 m_Size;
+        std::vector<PlatformRow> m_platforms;
+        std::vector<LadderCol>   m_ladders;
     };
 }
