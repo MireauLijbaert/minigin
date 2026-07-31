@@ -92,7 +92,8 @@ static void LoadLevel(int levelNum)
             scaleX, scaleY,
             LEVEL_OFFSET_X, LEVEL_OFFSET_Y,
             playerMovePtr,
-            &burgers
+            &burgers,
+            &levelData.cups
         );
         burgers.push_back(burgerComp.get());
         burgerObj->AddComponent(std::move(burgerComp));

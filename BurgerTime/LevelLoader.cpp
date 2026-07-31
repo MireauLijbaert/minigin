@@ -45,7 +45,7 @@ LevelData LevelLoader::Load(const std::string& filePath)
         for (int col = 0; col <= 9; ++col)
         {
             char c = (col < 9) ? cell(l, col) : ' ';
-            bool active = (c != ' ');
+            bool active = (c != ' ' && c != 'C');
 
             if (active && segStart < 0)
                 segStart = col;
@@ -63,17 +63,25 @@ LevelData LevelLoader::Load(const std::string& filePath)
                 data.playerStartSprite = { static_cast<float>(ladderX(col)),
                                            static_cast<float>(platformY(row)) };
 
-            // t=top_bun  m=patty  g=lettuce  b=bot_bun
-            if (c == 't' || c == 'm' || c == 'g' || c == 'b')
+            // t=top_bun  m=patty  g=lettuce  b=bot_bun  o=tomato  c=cheese
+            if (c == 't' || c == 'm' || c == 'g' || c == 'b' || c == 'o' || c == 'c')
             {
                 BurgerPieceDef def{};
                 if      (c == 't') def.type = 0;
                 else if (c == 'm') def.type = 1;
                 else if (c == 'g') def.type = 2;
-                else               def.type = 3;
+                else if (c == 'b') def.type = 3;
+                else if (c == 'o') def.type = 4;
+                else               def.type = 5;
                 def.row = row;
                 def.startCol = col;
                 data.burgers.push_back(def);
+            }
+
+            // C = cup; sits just below this platform row, no platform at this column
+            if (c == 'C')
+            {
+                data.cups.push_back({ row, col });
             }
         }
     }
