@@ -23,18 +23,14 @@ namespace fs = std::filesystem;
 static constexpr float TOP_MARGIN    = 50.f;
 static constexpr float BOTTOM_MARGIN = 20.f;
 
-// Native sprite size of the level PNGs (after cropping)
 static constexpr float SPRITE_W = 208.f;
 static constexpr float SPRITE_H = 187.f;
 
-static constexpr float LEVEL_DST_H = 576.f - TOP_MARGIN - BOTTOM_MARGIN;
-static constexpr float LEVEL_SCALE  = LEVEL_DST_H / SPRITE_H;
-static constexpr float LEVEL_DST_W  = SPRITE_W * LEVEL_SCALE;
-
+static constexpr float LEVEL_DST_H  = 576.f - TOP_MARGIN - BOTTOM_MARGIN;
+static constexpr float LEVEL_DST_W  = SPRITE_W * (LEVEL_DST_H / SPRITE_H);
 static constexpr float LEVEL_OFFSET_X = (1024.f - LEVEL_DST_W) * 0.5f;
 static constexpr float LEVEL_OFFSET_Y = TOP_MARGIN;
 
-// Character sprite native size
 static constexpr float CHAR_SPRITE_W = 16.f;
 static constexpr float CHAR_SPRITE_H = 16.f;
 
@@ -43,7 +39,14 @@ static void LoadLevel(int levelNum)
     static LevelData levelData;
     static std::vector<BurgerPieceComponent*> burgers;
     burgers.clear();
-    levelData = LevelLoader::Load("Data/bt_level" + std::to_string(levelNum) + ".txt");
+
+    const float scaleX = LEVEL_DST_W / SPRITE_W;
+    const float scaleY = LEVEL_DST_H / SPRITE_H;
+    const LevelTransform transform{ scaleX, scaleY, LEVEL_OFFSET_X, LEVEL_OFFSET_Y };
+    const float charW = CHAR_SPRITE_W * scaleX;
+    const float charH = CHAR_SPRITE_H * scaleY;
+
+    levelData = LevelLoader::Load("Data/bt_level" + std::to_string(levelNum) + ".txt", transform);
 
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
 
@@ -57,51 +60,34 @@ static void LoadLevel(int levelNum)
     scene.Add(std::move(bgObj));
 
     // Player
-    float scaleX = LEVEL_DST_W / SPRITE_W;
-    float scaleY = LEVEL_DST_H / SPRITE_H;
-    float charDisplayW = CHAR_SPRITE_W * scaleX;
-    float charDisplayH = CHAR_SPRITE_H * scaleY;
-
     auto playerObj = std::make_unique<dae::GameObject>();
     auto playerRender = std::make_unique<dae::RenderComponent>(*playerObj);
     playerRender->SetTexture("bt_player.png");
-    playerRender->SetSize(charDisplayW, charDisplayH);
+    playerRender->SetSize(charW, charH);
     playerObj->AddComponent(std::move(playerRender));
 
     auto playerMove = std::make_unique<PlatformMovementComponent>(
-        *playerObj,
-        levelData.map.get(),
-        levelData.playerStartSprite,
-        scaleX, scaleY,
-        LEVEL_OFFSET_X, LEVEL_OFFSET_Y,
-        CHAR_SPRITE_W, CHAR_SPRITE_H
+        *playerObj, levelData.map.get(), levelData.playerStart, charW, charH, transform
     );
     PlatformMovementComponent* playerMovePtr = playerMove.get();
     playerObj->AddComponent(std::move(playerMove));
     scene.Add(std::move(playerObj));
 
-    // Enemies, 2 hot dogs at top-left and top-right of row 0
-    // ladderX(0)=8, ladderX(8)=200, platformY(0)=1
+    // Enemies at top-left and top-right (ladderX(0)=8, ladderX(8)=200, platformY(0)=1 in sprite coords)
     const glm::vec2 enemySpawns[] = {
-        { static_cast<float>(8),   static_cast<float>(1) },
-        { static_cast<float>(200), static_cast<float>(1) }
+        { transform.WorldX(8.f),   transform.WorldY(1.f) },
+        { transform.WorldX(200.f), transform.WorldY(1.f) }
     };
     for (const auto& spawnPos : enemySpawns)
     {
         auto enemyObj    = std::make_unique<dae::GameObject>();
         auto enemyRender = std::make_unique<dae::RenderComponent>(*enemyObj);
         enemyRender->SetTexture("bt_hotdog.png");
-        enemyRender->SetSize(charDisplayW, charDisplayH);
+        enemyRender->SetSize(charW, charH);
         enemyObj->AddComponent(std::move(enemyRender));
 
         auto enemyComp = std::make_unique<EnemyComponent>(
-            *enemyObj,
-            levelData.map.get(),
-            spawnPos,
-            scaleX, scaleY,
-            LEVEL_OFFSET_X, LEVEL_OFFSET_Y,
-            CHAR_SPRITE_W, CHAR_SPRITE_H,
-            playerMovePtr
+            *enemyObj, levelData.map.get(), spawnPos, charW, charH, transform, playerMovePtr
         );
         enemyObj->AddComponent(std::move(enemyComp));
         scene.Add(std::move(enemyObj));
@@ -117,8 +103,7 @@ static void LoadLevel(int levelNum)
             static_cast<BurgerType>(bdef.type),
             bdef.row,
             bdef.startCol,
-            scaleX, scaleY,
-            LEVEL_OFFSET_X, LEVEL_OFFSET_Y,
+            transform,
             playerMovePtr,
             &burgers,
             &levelData.cups

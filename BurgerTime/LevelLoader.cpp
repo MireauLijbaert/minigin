@@ -2,13 +2,7 @@
 #include <fstream>
 #include <cassert>
 
-// Fixed BurgerTime grid: 12 platform rows x 9 ladder columns
-// Row y and column x in sprite pixels, derived from grid index
-static constexpr int platformY(int row) { return 1 + row * 16; }
-static constexpr int ladderX(int col) { return 8 + col * 24; }
-static constexpr int SPRITE_W = 207; // max x (208 wide, 0-indexed)
-
-LevelData LevelLoader::Load(const std::string& filePath)
+LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& transform)
 {
     std::ifstream file(filePath);
     assert(file.is_open() && "LevelLoader: failed to open file");
@@ -26,8 +20,7 @@ LevelData LevelLoader::Load(const std::string& filePath)
     }
 
     // Even-indexed lines (0,2,4,...22): platform rows (12 total)
-    // Odd-indexed lines  (1,3,5,...21): ladder rows  (11 total, one per gap between platform rows)
-
+  // Odd-indexed lines  (1,3,5,...21): ladder rows  (11 total, one per gap between platform rows)
     auto cell = [](const std::string& l, int col) -> char {
         int pos = col * 2;
         return pos < static_cast<int>(l.size()) ? l[pos] : ' ';
@@ -53,17 +46,19 @@ LevelData LevelLoader::Load(const std::string& filePath)
             if (!active && segStart >= 0)
             {
                 int lastCol = col - 1;
-                int x0 = ladderX(segStart);
-                int x1 = ladderX(lastCol);
-                data.map->AddPlatform(platformY(row), x0, x1);
+                float x0 = transform.WorldX(static_cast<float>(GridLadderX(segStart)));
+                float x1 = transform.WorldX(static_cast<float>(GridLadderX(lastCol)));
+                float y  = transform.WorldY(static_cast<float>(GridPlatformY(row)));
+                data.map->AddPlatform(row, y, x0, x1);
                 segStart = -1;
             }
 
             if (c == 'P')
-                data.playerStartSprite = { static_cast<float>(ladderX(col)),
-                                           static_cast<float>(platformY(row)) };
+                data.playerStart = {
+                    transform.WorldX(static_cast<float>(GridLadderX(col))),
+                    transform.WorldY(static_cast<float>(GridPlatformY(row)))
+                };
 
-            // t=top_bun  m=patty  g=lettuce  b=bot_bun  o=tomato  c=cheese
             if (c == 't' || c == 'm' || c == 'g' || c == 'b' || c == 'o' || c == 'c')
             {
                 BurgerPieceDef def{};
@@ -78,20 +73,16 @@ LevelData LevelLoader::Load(const std::string& filePath)
                 data.burgers.push_back(def);
             }
 
-            // C = cup; sits just below this platform row, no platform at this column
             if (c == 'C')
-            {
                 data.cups.push_back({ row, col });
-            }
         }
     }
 
     // --- Ladders ---
-    // For each column, scan the 11 gap rows and merge consecutive '|' entries
     for (int col = 0; col < 9; ++col)
     {
-        int segY0 = -1;
-        int lastYBot = -1;
+        int segY0Sprite = -1;
+        int lastYBotSprite = -1;
 
         for (int gap = 0; gap < 11; ++gap)
         {
@@ -99,20 +90,28 @@ LevelData LevelLoader::Load(const std::string& filePath)
             bool hasLadr = idx < static_cast<int>(lines.size())
                            && cell(lines[idx], col) == '|';
 
-            int yTop = platformY(gap);
-            int yBot = platformY(gap + 1);
+            int yTop = GridPlatformY(gap);
+            int yBot = GridPlatformY(gap + 1);
 
-            if (hasLadr && segY0 < 0)
-                segY0 = yTop;
-            else if (!hasLadr && segY0 >= 0)
+            if (hasLadr && segY0Sprite < 0)
+                segY0Sprite = yTop;
+            else if (!hasLadr && segY0Sprite >= 0)
             {
-                data.map->AddLadder(ladderX(col), segY0, lastYBot);
-                segY0 = -1;
+                float x  = transform.WorldX(static_cast<float>(GridLadderX(col)));
+                float y0 = transform.WorldY(static_cast<float>(segY0Sprite));
+                float y1 = transform.WorldY(static_cast<float>(lastYBotSprite));
+                data.map->AddLadder(col, x, y0, y1);
+                segY0Sprite = -1;
             }
-            lastYBot = yBot;
+            lastYBotSprite = yBot;
         }
-        if (segY0 >= 0)
-            data.map->AddLadder(ladderX(col), segY0, lastYBot);
+        if (segY0Sprite >= 0)
+        {
+            float x  = transform.WorldX(static_cast<float>(GridLadderX(col)));
+            float y0 = transform.WorldY(static_cast<float>(segY0Sprite));
+            float y1 = transform.WorldY(static_cast<float>(lastYBotSprite));
+            data.map->AddLadder(col, x, y0, y1);
+        }
     }
 
     return data;

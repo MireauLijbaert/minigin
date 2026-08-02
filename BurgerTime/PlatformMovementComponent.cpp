@@ -5,22 +5,21 @@
 
 PlatformMovementComponent::PlatformMovementComponent(dae::GameObject& owner,
                                                      const dae::LevelMap* levelMap,
-                                                     glm::vec2 spritePos,
-                                                     float scaleX, float scaleY,
-                                                     float offsetX, float offsetY,
-                                                     float spriteW, float spriteH)
+                                                     glm::vec2 worldPos,
+                                                     float charWorldW, float charWorldH,
+                                                     const LevelTransform& transform)
     : BaseComponent(owner)
     , m_levelMap{ levelMap }
-    , m_spritePosX{ spritePos.x }
-    , m_spritePosY{ spritePos.y }
-    , m_scaleX{ scaleX }
-    , m_scaleY{ scaleY }
-    , m_offsetX{ offsetX }
-    , m_offsetY{ offsetY }
-    , m_spriteW{ spriteW }
-    , m_spriteH{ spriteH }
+    , m_posX{ worldPos.x }
+    , m_posY{ worldPos.y }
+    , m_charHalfW{ charWorldW * 0.5f }
+    , m_charRenderH{ charWorldH + 2.f * transform.scaleY }
+    , m_stepX{ transform.scaleX }
+    , m_stepY{ transform.scaleY }
+    , m_platThresh{ 2.f * transform.scaleY }
+    , m_ladrThresh{ 4.f * transform.scaleX }
 {
-    SyncWorldPosition();
+    SyncPosition();
 }
 
 void PlatformMovementComponent::Update()
@@ -33,15 +32,15 @@ void PlatformMovementComponent::Update()
 
     if (!anyKey)
     {
-        m_stepTimer = STEP_INTERVAL; // so the next keypress steps immediately
-        SyncWorldPosition();
+        m_stepTimer = STEP_INTERVAL;
+        SyncPosition();
         return;
     }
 
     m_stepTimer += dt;
     if (m_stepTimer < STEP_INTERVAL)
     {
-        SyncWorldPosition();
+        SyncPosition();
         return;
     }
     m_stepTimer = 0.f;
@@ -49,14 +48,14 @@ void PlatformMovementComponent::Update()
     // Vertical takes priority: only if a ladder is reachable
     if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_DOWN])
     {
-        float dy = keys[SDL_SCANCODE_DOWN] ? STEP : -STEP;
-        float newY = m_spritePosY + dy;
-        const auto* ladr = m_levelMap->FindLadder(m_spritePosX, newY, LADR_THRESHOLD);
+        float dy = keys[SDL_SCANCODE_DOWN] ? m_stepY : -m_stepY;
+        float newY = m_posY + dy;
+        const auto* ladr = m_levelMap->FindLadder(m_posX, newY, m_ladrThresh);
         if (ladr)
         {
-            m_spritePosY = newY;
-            m_spritePosX = static_cast<float>(ladr->x); // snap center to ladder column
-            SyncWorldPosition();
+            m_posY = newY;
+            m_posX = ladr->x;
+            SyncPosition();
             return;
         }
     }
@@ -64,23 +63,20 @@ void PlatformMovementComponent::Update()
     // Horizontal: only if on a platform
     if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_RIGHT])
     {
-        float dx = keys[SDL_SCANCODE_RIGHT] ? STEP : -STEP;
-        float newX = m_spritePosX + dx;
-        const auto* plat = m_levelMap->FindPlatform(newX, m_spritePosY, PLAT_THRESHOLD);
+        float dx = keys[SDL_SCANCODE_RIGHT] ? m_stepX : -m_stepX;
+        float newX = m_posX + dx;
+        const auto* plat = m_levelMap->FindPlatform(newX, m_posY, m_platThresh);
         if (plat)
         {
-            m_spritePosX = newX;
-            m_spritePosY = static_cast<float>(plat->y); // snap feet to platform row
+            m_posX = newX;
+            m_posY = plat->y;
         }
     }
 
-    SyncWorldPosition();
+    SyncPosition();
 }
 
-void PlatformMovementComponent::SyncWorldPosition()
+void PlatformMovementComponent::SyncPosition()
 {
-    // Sprite position is feet-center; top-left for rendering:
-    float worldX = m_offsetX + (m_spritePosX - m_spriteW * 0.5f) * m_scaleX;
-    float worldY = m_offsetY + (m_spritePosY - m_spriteH - 2) * m_scaleY;
-    GetOwner()->SetLocalPosition(worldX, worldY);
+    GetOwner()->SetLocalPosition(m_posX - m_charHalfW, m_posY - m_charRenderH);
 }

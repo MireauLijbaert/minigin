@@ -6,17 +6,12 @@
 #include <SDL3/SDL.h>
 #include <cmath>
 
-// Float positions based on the row and column of the piece in the level map
-static constexpr int platformY(int row) { return 1 + row * 16; }
-static constexpr int ladderX(int col) { return 8 + col * 24; }
-
 BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
                                             const dae::LevelMap* levelMap,
                                             BurgerType type,
                                             int platformRow,
                                             int startCol,
-                                            float scaleX, float scaleY,
-                                            float offsetX, float offsetY,
+                                            const LevelTransform& transform,
                                             PlatformMovementComponent* player,
                                             std::vector<BurgerPieceComponent*>* allPieces,
                                             const std::vector<CupDef>* cups)
@@ -25,14 +20,15 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
     , m_type{ type }
     , m_currentRow{ platformRow }
     , m_startCol{ startCol }
-    , m_scaleX{ scaleX }
-    , m_scaleY{ scaleY }
-    , m_offsetX{ offsetX }
-    , m_offsetY{ offsetY }
+    , m_worldCenterX{ transform.WorldX(static_cast<float>(GridLadderX(startCol))) }
+    , m_yTolerance{ 2.f * transform.scaleY }
+    , m_maxDrop{ 3.f * transform.scaleY }
+    , m_fallSpeed{ 40.f * transform.scaleY }
+    , m_cupBottomY{ transform.WorldY(186.f) }
     , m_player{ player }
     , m_allPieces{ allPieces }
     , m_cups{ cups }
-    , m_fallingY{ static_cast<float>(platformY(platformRow)) }
+    , m_fallingY{ transform.WorldY(static_cast<float>(GridPlatformY(platformRow))) }
 {
     std::string textureName;
     switch (type)
@@ -46,59 +42,22 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
     }
     m_texture = dae::ResourceManager::GetInstance().LoadTexture(textureName);
     glm::vec2 size = m_texture->GetSize();
-    m_pieceW = size.x;
-    m_pieceH = size.y;
+    m_pieceW = size.x * transform.scaleX;
+    m_pieceH = size.y * transform.scaleY;
     m_segW   = m_pieceW / 4.f;
 }
 
-// Gives the X coordinate of the left edge of the piece in world coordinates
 float BurgerPieceComponent::GetLeftEdgeX() const
 {
-    return static_cast<float>(ladderX(m_startCol)) - m_pieceW * 0.5f;
-}
-
-int BurgerPieceComponent::FindLandingRow() const
-{
-    float centerX = GetLeftEdgeX() + m_pieceW * 0.5f;
-
-    // Nearest platform below
-    int platRow = -1;
-    for (int r = m_currentRow + 1; r < 12; ++r)
-    {
-        if (m_levelMap->FindPlatform(centerX, static_cast<float>(platformY(r)), 1.f))
-        {
-            platRow = r;
-            break;
-        }
-    }
-
-    // Nearest cup below at this piece's column
-    int cupRow = -1;
-    if (m_cups)
-    {
-        for (const auto& cup : *m_cups)
-        {
-            if (cup.col == m_startCol && cup.row > m_currentRow)
-            {
-                if (cupRow < 0 || cup.row < cupRow)
-                    cupRow = cup.row;
-            }
-        }
-    }
-
-    // Return whichever is closer (cups can catch pieces before they reach a platform)
-    if (platRow < 0) return cupRow;
-    if (cupRow  < 0) return platRow;
-    return std::min(platRow, cupRow);
+    return m_worldCenterX - m_pieceW * 0.5f;
 }
 
 void BurgerPieceComponent::CheckPlayerPress()
 {
-    // Should be changed, we are using sprite positions instead of gameobject positions
-    float px = m_player->GetSpritePosX();
-    float py = m_player->GetSpritePosY();
+    float px = m_player->GetPosX();
+    float py = m_player->GetPosY();
 
-    if (std::abs(py - static_cast<float>(platformY(m_currentRow))) > 1.f)
+    if (std::abs(py - m_fallingY) > m_yTolerance)
         return;
 
     float x0 = GetLeftEdgeX();
@@ -110,7 +69,7 @@ void BurgerPieceComponent::CheckPlayerPress()
         if (px >= segX0 && px < segX1)
         {
             m_pressed[i] = true;
-            m_segmentDrop[i] = MAX_DROP;
+            m_segmentDrop[i] = m_maxDrop;
         }
     }
 }
@@ -124,24 +83,38 @@ bool BurgerPieceComponent::AllPressed() const
 
 void BurgerPieceComponent::StartFalling()
 {
-    m_targetRow = FindLandingRow();
-    if (m_targetRow < 0) return;
+    // Find nearest platform below in world coords
+    const dae::PlatformRow* plat = m_levelMap->FindNextPlatformBelow(m_worldCenterX, m_fallingY);
 
-    // Use cup bottom y if landing in a cup, otherwise the platform row y
-    m_targetY = static_cast<float>(platformY(m_targetRow));
+    // Find nearest cup below at this column
+    int cupRow = -1;
     if (m_cups)
     {
         for (const auto& cup : *m_cups)
         {
-            if (cup.col == m_startCol && cup.row == m_targetRow)
+            if (cup.col == m_startCol && cup.row > m_currentRow)
             {
-                m_targetY = CUP_BOTTOM_Y;
-                break;
+                if (cupRow < 0 || cup.row < cupRow)
+                    cupRow = cup.row;
             }
         }
     }
 
-    m_fallingY = static_cast<float>(platformY(m_currentRow));
+    if (!plat && cupRow < 0) return;
+
+    bool hitCupFirst = plat && cupRow >= 0 ? (cupRow < plat->row) : (cupRow >= 0);
+
+    if (hitCupFirst)
+    {
+        m_targetRow = cupRow;
+        m_targetY = m_cupBottomY;
+    }
+    else
+    {
+        m_targetRow = plat->row;
+        m_targetY = plat->y;
+    }
+
     m_state = State::Falling;
 }
 
@@ -154,7 +127,7 @@ void BurgerPieceComponent::PushDown()
 void BurgerPieceComponent::OnLanded()
 {
     m_currentRow = m_targetRow;
-    m_fallingY = m_targetY; // already set correctly for both platforms and cups
+    m_fallingY = m_targetY;
 
     for (int i = 0; i < 4; ++i)
     {
@@ -162,7 +135,7 @@ void BurgerPieceComponent::OnLanded()
         m_segmentDrop[i] = 0.f;
     }
 
-    // Check if we landed in a cup, stack on top of any pieces already there
+	// Check if we landed in a cup, stack on top of any pieces already there
     if (m_cups)
     {
         for (const auto& cup : *m_cups)
@@ -176,8 +149,7 @@ void BurgerPieceComponent::OnLanded()
                         && other->m_startCol == m_startCol)
                         ++stackCount;
                 }
-                // Stack upward from cup bottom: first piece bottom at CUP_BOTTOM_Y
-                m_fallingY = CUP_BOTTOM_Y - static_cast<float>(stackCount) * m_pieceH;
+                m_fallingY = m_cupBottomY - static_cast<float>(stackCount) * m_pieceH;
                 m_state = State::Dead;
                 return;
             }
@@ -222,7 +194,7 @@ void BurgerPieceComponent::Update()
     }
     else // Falling
     {
-        m_fallingY += FALL_SPEED * dt;
+        m_fallingY += m_fallSpeed * dt;
         if (m_fallingY >= m_targetY)
         {
             m_fallingY = m_targetY;
@@ -233,6 +205,7 @@ void BurgerPieceComponent::Update()
 
 void BurgerPieceComponent::Render()
 {
+	// Render the 4 segments of the burger piece, applying any drop offsets for pressed segments
     if (!m_texture) return;
 
     SDL_Renderer* renderer = dae::Renderer::GetInstance().GetSDLRenderer();
@@ -246,16 +219,16 @@ void BurgerPieceComponent::Render()
         float drop = (m_state == State::Idle) ? m_segmentDrop[i] : 0.f;
 
         SDL_FRect src{};
-        src.x = static_cast<float>(i) * m_segW;
+        src.x = static_cast<float>(i) * (m_texture->GetSize().x / 4.f);
         src.y = 0.f;
-        src.w = m_segW;
-        src.h = m_pieceH;
+        src.w = m_texture->GetSize().x / 4.f;
+        src.h = m_texture->GetSize().y;
 
         SDL_FRect dst{};
-        dst.x = m_offsetX + (x0 + static_cast<float>(i) * m_segW) * m_scaleX;
-        dst.y = m_offsetY + (baseY - m_pieceH + drop) * m_scaleY;
-        dst.w = m_segW * m_scaleX;
-        dst.h = m_pieceH * m_scaleY;
+        dst.x = x0 + static_cast<float>(i) * m_segW;
+        dst.y = baseY - m_pieceH + drop;
+        dst.w = m_segW;
+        dst.h = m_pieceH;
 
         SDL_RenderTexture(renderer, tex, &src, &dst);
     }

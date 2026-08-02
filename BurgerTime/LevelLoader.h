@@ -5,6 +5,17 @@
 #include <glm/glm.hpp>
 #include "LevelMap.h"
 
+struct LevelTransform
+{
+    float scaleX, scaleY, offsetX, offsetY;
+    float WorldX(float spriteX) const { return offsetX + spriteX * scaleX; }
+    float WorldY(float spriteY) const { return offsetY + spriteY * scaleY; }
+};
+
+// Grid coordinate helpers (sprite pixel space)
+inline constexpr int GridPlatformY(int row) { return 1 + row * 16; }
+inline constexpr int GridLadderX(int col)   { return 8 + col * 24; }
+
 struct BurgerPieceDef
 {
     int type;     // 0=top_bun, 1=patty, 2=lettuce, 3=bot_bun, 4=tomato, 5=cheese
@@ -21,8 +32,7 @@ struct CupDef
 struct LevelData
 {
     std::unique_ptr<dae::LevelMap> map;
-    glm::ivec2 spriteSize{ 208, 187 };
-    glm::vec2 playerStartSprite{ 104.f, 1.f }; // sprite pixel coords (feet center)
+    glm::vec2 playerStart{};  // world coords (feet center)
     std::vector<BurgerPieceDef> burgers;
     std::vector<CupDef> cups;
 };
@@ -30,5 +40,5 @@ struct LevelData
 class LevelLoader
 {
 public:
-    static LevelData Load(const std::string& filePath);
+    static LevelData Load(const std::string& filePath, const LevelTransform& transform);
 };
