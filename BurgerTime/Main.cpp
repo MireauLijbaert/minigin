@@ -14,6 +14,7 @@
 #include "LevelLoader.h"
 #include "PlatformMovementComponent.h"
 #include "BurgerPieceComponent.h"
+#include "EnemyComponent.h"
 
 #include <filesystem>
 #include <string>
@@ -78,6 +79,33 @@ static void LoadLevel(int levelNum)
     PlatformMovementComponent* playerMovePtr = playerMove.get();
     playerObj->AddComponent(std::move(playerMove));
     scene.Add(std::move(playerObj));
+
+    // Enemies, 2 hot dogs at top-left and top-right of row 0
+    // ladderX(0)=8, ladderX(8)=200, platformY(0)=1
+    const glm::vec2 enemySpawns[] = {
+        { static_cast<float>(8),   static_cast<float>(1) },
+        { static_cast<float>(200), static_cast<float>(1) }
+    };
+    for (const auto& spawnPos : enemySpawns)
+    {
+        auto enemyObj    = std::make_unique<dae::GameObject>();
+        auto enemyRender = std::make_unique<dae::RenderComponent>(*enemyObj);
+        enemyRender->SetTexture("bt_hotdog.png");
+        enemyRender->SetSize(charDisplayW, charDisplayH);
+        enemyObj->AddComponent(std::move(enemyRender));
+
+        auto enemyComp = std::make_unique<EnemyComponent>(
+            *enemyObj,
+            levelData.map.get(),
+            spawnPos,
+            scaleX, scaleY,
+            LEVEL_OFFSET_X, LEVEL_OFFSET_Y,
+            CHAR_SPRITE_W, CHAR_SPRITE_H,
+            playerMovePtr
+        );
+        enemyObj->AddComponent(std::move(enemyComp));
+        scene.Add(std::move(enemyObj));
+    }
 
     // Burger pieces
     for (const auto& bdef : levelData.burgers)

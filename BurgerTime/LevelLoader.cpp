@@ -53,8 +53,8 @@ LevelData LevelLoader::Load(const std::string& filePath)
             if (!active && segStart >= 0)
             {
                 int lastCol = col - 1;
-                int x0 = (segStart == 0) ? 0 : ladderX(segStart);
-                int x1 = (lastCol == 8)  ? SPRITE_W : ladderX(lastCol);
+                int x0 = ladderX(segStart);
+                int x1 = ladderX(lastCol);
                 data.map->AddPlatform(platformY(row), x0, x1);
                 segStart = -1;
             }

@@ -9,13 +9,13 @@ namespace dae
     const PlatformRow* LevelMap::FindPlatform(float spriteX, float spriteY, float threshold) const
     {
         const PlatformRow* best = nullptr;
-        float bestDist = threshold + 1.f;
+        float bestDist = threshold + 0.001f; // find nearest within threshold (inclusive)
         for (const auto& p : m_platforms)
         {
             float dist = std::abs(spriteY - static_cast<float>(p.y));
             if (dist < bestDist
-                && spriteX >= static_cast<float>(p.x0) - threshold
-                && spriteX <= static_cast<float>(p.x1) + threshold)
+                && spriteX >= static_cast<float>(p.x0) - 0.001f  // exact x bounds
+                && spriteX <= static_cast<float>(p.x1) + 0.001f)
             {
                 bestDist = dist;
                 best = &p;
@@ -27,7 +27,7 @@ namespace dae
     const LadderCol* LevelMap::FindLadder(float spriteX, float spriteY, float threshold) const
     {
         const LadderCol* best = nullptr;
-        float bestDist = threshold + 1.f;
+        float bestDist = threshold + 0.001f; // find nearest within threshold (inclusive)
         for (const auto& l : m_ladders)
         {
             float dist = std::abs(spriteX - static_cast<float>(l.x));

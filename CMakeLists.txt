@@ -210,6 +210,8 @@ if(EMSCRIPTEN)
     "BurgerTime/PlatformMovementComponent.cpp"
     "BurgerTime/BurgerPieceComponent.h"
     "BurgerTime/BurgerPieceComponent.cpp"
+    "BurgerTime/EnemyComponent.h"
+    "BurgerTime/EnemyComponent.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
@@ -228,6 +230,8 @@ else()
     "BurgerTime/PlatformMovementComponent.cpp"
     "BurgerTime/BurgerPieceComponent.h"
     "BurgerTime/BurgerPieceComponent.cpp"
+    "BurgerTime/EnemyComponent.h"
+    "BurgerTime/EnemyComponent.cpp"
   )
 endif()
 
