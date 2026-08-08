@@ -2,7 +2,11 @@
 #include "BaseComponent.h"
 #include "LevelMap.h"
 #include "LevelLoader.h"
+#include "HealthComponent.h"
 #include <glm/glm.hpp>
+#include <vector>
+
+class EnemyComponent;
 
 class PlatformMovementComponent : public dae::BaseComponent
 {
@@ -18,20 +22,35 @@ public:
 
     float GetPosX() const { return m_posX; }
     float GetPosY() const { return m_posY; }
+    glm::vec2 GetFacingDir() const { return m_facingDir; }
+
+    bool IsAlive() const { return m_state == PlayerState::Alive; }
+    void Kill();
+    void SetHealthComponent(dae::HealthComponent* health) { m_health = health; }
+    void SetEnemies(std::vector<EnemyComponent*>* enemies) { m_enemies = enemies; }
 
 private:
+    enum class PlayerState { Alive, Dead };
+    PlayerState m_state{ PlayerState::Alive };
+    float m_respawnTimer{ 0.f };
+    glm::vec2 m_startPos;
+    glm::vec2 m_facingDir{ 1.f, 0.f };
+    dae::HealthComponent* m_health{ nullptr };
+    std::vector<EnemyComponent*>* m_enemies{ nullptr };
+
     const dae::LevelMap* m_levelMap;
 
-    float m_posX, m_posY;      // feet-center in world coords
-    float m_charHalfW;         // half char width for rendering offset
-    float m_charRenderH;       // char height + 2px nudge, for rendering offset
-    float m_stepX, m_stepY;    // world pixels per step (= scaleX/Y)
-    float m_platThresh;        // y-distance snap for platforms
-    float m_ladrThresh;        // x-distance snap for ladders
+    float m_posX, m_posY;
+    float m_charHalfW;
+    float m_charRenderH;
+    float m_stepX, m_stepY;
+    float m_platThresh;
+    float m_ladrThresh;
 
     float m_stepTimer{ 0.f };
 
-    static constexpr float STEP_INTERVAL = 1.f / 60.f;
+    static constexpr float STEP_INTERVAL  = 1.f / 60.f;
+    static constexpr float RESPAWN_DELAY  = 2.f;
 
     void SyncPosition();
 };

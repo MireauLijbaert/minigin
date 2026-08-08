@@ -1,9 +1,12 @@
 #include "BurgerPieceComponent.h"
+#include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
+#include "ScoreManager.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "TimeSingleton.h"
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cmath>
 
 BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
@@ -14,7 +17,8 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
                                             const LevelTransform& transform,
                                             PlatformMovementComponent* player,
                                             std::vector<BurgerPieceComponent*>* allPieces,
-                                            const std::vector<CupDef>* cups)
+                                            const std::vector<CupDef>* cups,
+                                            std::vector<EnemyComponent*>* enemies)
     : BaseComponent(owner)
     , m_levelMap{ levelMap }
     , m_type{ type }
@@ -28,6 +32,7 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
     , m_player{ player }
     , m_allPieces{ allPieces }
     , m_cups{ cups }
+    , m_enemies{ enemies }
     , m_fallingY{ transform.WorldY(static_cast<float>(GridPlatformY(platformRow))) }
 {
     std::string textureName;
@@ -60,11 +65,11 @@ void BurgerPieceComponent::CheckPlayerPress()
     if (std::abs(py - m_fallingY) > m_yTolerance)
         return;
 
-    float x0 = GetLeftEdgeX();
+    float leftEdge = GetLeftEdgeX();
     for (int i = 0; i < 4; ++i)
     {
         if (m_pressed[i]) continue;
-        float segX0 = x0 + static_cast<float>(i) * m_segW;
+        float segX0 = leftEdge + static_cast<float>(i) * m_segW;
         float segX1 = segX0 + m_segW;
         if (px >= segX0 && px < segX1)
         {
@@ -115,6 +120,26 @@ void BurgerPieceComponent::StartFalling()
         m_targetY = plat->y;
     }
 
+    // Catch any enemies standing on this burger's platform row
+    if (m_enemies)
+    {
+        float leftEdge = GetLeftEdgeX();
+        for (auto* enemy : *m_enemies)
+        {
+            if (!enemy->IsAlive()) continue;
+            if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
+                && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge  + m_pieceW)
+            {
+                m_caughtEnemies.push_back(enemy);
+                enemy->CatchByBurger();
+            }
+        }
+    }
+
+    if (!m_caughtEnemies.empty())
+        m_extraFloors = 2;
+
+    m_startFallingY = m_fallingY;
     m_state = State::Falling;
 }
 
@@ -135,41 +160,88 @@ void BurgerPieceComponent::OnLanded()
         m_segmentDrop[i] = 0.f;
     }
 
-	// Check if we landed in a cup, stack on top of any pieces already there
+    // Squish enemies on the landing platform (skip any carried enemies)
+    if (m_enemies)
+    {
+        float leftEdge = GetLeftEdgeX();
+        for (auto* enemy : *m_enemies)
+        {
+            if (!enemy->IsAlive()) continue;
+            bool carried = false;
+            for (auto* c : m_caughtEnemies) if (c == enemy) { carried = true; break; }
+            if (carried) continue;
+            if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
+                && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
+            {
+                ScoreManager::GetInstance().AddScore(enemy->GetSquishScore());
+                enemy->Kill();
+            }
+        }
+    }
+
+    // Check cup, kills any carried enemies and lands here regardless of extra floors
     if (m_cups)
     {
         for (const auto& cup : *m_cups)
         {
             if (cup.col == m_startCol && cup.row == m_currentRow)
             {
+                if (!m_caughtEnemies.empty())
+                {
+                    static const int fallScores[] = { 500, 1000, 2000, 4000 };
+                    ScoreManager::GetInstance().AddScore(
+                        fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)]);
+                    for (auto* enemy : m_caughtEnemies) enemy->Kill();
+                    m_caughtEnemies.clear();
+                }
                 int stackCount = 0;
                 for (auto* other : *m_allPieces)
-                {
                     if (other != this && other->m_state == State::Dead
                         && other->m_startCol == m_startCol)
                         ++stackCount;
-                }
                 m_fallingY = m_cupBottomY - static_cast<float>(stackCount) * m_pieceH;
+                m_extraFloors = 0;
                 m_state = State::Dead;
                 return;
             }
         }
     }
 
-    // Regular platform landing: push any overlapping pieces below
-    float myX0 = GetLeftEdgeX();
-    float myX1 = myX0 + m_pieceW;
-    for (auto* peer : *m_allPieces)
+    // Push any overlapping pieces on this platform (every landing, intermediate or final)
     {
-        if (peer == this || peer->m_state != State::Idle || peer->m_currentRow != m_currentRow)
-            continue;
-
-        float pX0 = peer->GetLeftEdgeX();
-        float pX1 = pX0 + peer->m_pieceW;
-        if (myX0 < pX1 && pX0 < myX1)
-            peer->PushDown();
+        float myX0 = GetLeftEdgeX();
+        float myX1 = myX0 + m_pieceW;
+        for (auto* peer : *m_allPieces)
+        {
+            if (peer == this || peer->m_state != State::Idle || peer->m_currentRow != m_currentRow)
+                continue;
+            float pX0 = peer->GetLeftEdgeX();
+            float pX1 = pX0 + peer->m_pieceW;
+            if (myX0 < pX1 && pX0 < myX1)
+                peer->PushDown();
+        }
     }
 
+    // Bounce through extra floors, carried enemies keep riding
+    if (m_extraFloors > 0)
+    {
+        --m_extraFloors;
+        StartFalling();
+        if (m_state == State::Falling) return;
+        // No platform found below, fall through to final landing
+    }
+
+    // Final landing: kill carried enemies and award score
+    if (!m_caughtEnemies.empty())
+    {
+        static const int fallScores[] = { 500, 1000, 2000, 4000 };
+        ScoreManager::GetInstance().AddScore(
+            fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)]);
+        for (auto* e : m_caughtEnemies) e->Kill();
+        m_caughtEnemies.clear();
+    }
+
+    m_extraFloors = 0;
     m_state = State::Idle;
 }
 
@@ -195,6 +267,32 @@ void BurgerPieceComponent::Update()
     else // Falling
     {
         m_fallingY += m_fallSpeed * dt;
+
+        // Kill any enemy on a ladder that the burger falls through
+        if (m_enemies)
+        {
+            float x0 = GetLeftEdgeX();
+            for (auto* enemy : *m_enemies)
+            {
+                if (!enemy->IsAlive()) continue;
+                bool alreadyCaught = false;
+                for (auto* c : m_caughtEnemies)
+                    if (c == enemy) { alreadyCaught = true; break; }
+                if (alreadyCaught) continue;
+
+                if (enemy->GetPosX() >= x0 && enemy->GetPosX() <= x0 + m_pieceW
+                    && enemy->GetPosY() >= m_startFallingY
+                    && enemy->GetPosY() <= m_fallingY + m_yTolerance
+                    && !m_levelMap->FindPlatform(enemy->GetPosX(), enemy->GetPosY(), m_yTolerance * 2.f))
+                {
+                    ScoreManager::GetInstance().AddScore(enemy->GetSquishScore());
+                    enemy->Kill();
+                }
+            }
+        }
+
+        for (auto* enemy : m_caughtEnemies)
+            enemy->SetFallingY(m_fallingY);
         if (m_fallingY >= m_targetY)
         {
             m_fallingY = m_targetY;

@@ -59,12 +59,12 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
                     transform.WorldY(static_cast<float>(GridPlatformY(row)))
                 };
 
-            if (c == 't' || c == 'm' || c == 'g' || c == 'b' || c == 'o' || c == 'c')
+            if (c == 't' || c == 'm' || c == 'l' || c == 'b' || c == 'o' || c == 'c')
             {
                 BurgerPieceDef def{};
                 if      (c == 't') def.type = 0;
                 else if (c == 'm') def.type = 1;
-                else if (c == 'g') def.type = 2;
+                else if (c == 'l') def.type = 2;
                 else if (c == 'b') def.type = 3;
                 else if (c == 'o') def.type = 4;
                 else               def.type = 5;

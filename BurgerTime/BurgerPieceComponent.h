@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+class EnemyComponent;
+
 enum class BurgerType { TopBun, Patty, Lettuce, BotBun, Tomato, Cheese };
 
 class PlatformMovementComponent;
@@ -21,12 +23,14 @@ public:
                          const LevelTransform& transform,
                          PlatformMovementComponent* player,
                          std::vector<BurgerPieceComponent*>* allPieces,
-                         const std::vector<CupDef>* cups);
+                         const std::vector<CupDef>* cups,
+                         std::vector<EnemyComponent*>* enemies = nullptr);
 
     void Update() override;
     void Render() override;
 
     void PushDown();
+    bool IsInCup() const { return m_state == State::Dead; }
 
 private:
     const dae::LevelMap* m_levelMap;
@@ -41,15 +45,19 @@ private:
     PlatformMovementComponent* m_player;
     std::vector<BurgerPieceComponent*>* m_allPieces;
     const std::vector<CupDef>* m_cups;
+    std::vector<EnemyComponent*>* m_enemies{ nullptr };
+    std::vector<EnemyComponent*> m_caughtEnemies;
 
     bool  m_pressed[4]{};
     float m_segmentDrop[4]{};
 
     enum class State { Idle, Falling, Dead };
     State m_state{ State::Idle };
-    float m_fallingY{};  
+    float m_fallingY{};
+    float m_startFallingY{};
     int   m_targetRow{ -1 };
-    float m_targetY{}; 
+    float m_targetY{};
+    int   m_extraFloors{ 0 }; 
 
     std::shared_ptr<dae::Texture2D> m_texture;
     float m_pieceW{}; 
