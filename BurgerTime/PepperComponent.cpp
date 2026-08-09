@@ -40,6 +40,7 @@ void PepperComponent::Update()
     if (keyDown && !m_prevKeyDown)
     {
         --m_charges;
+        NotifyPepperChanged();
 
         glm::vec2 dir = m_player->GetFacingDir();
         float px = m_player->GetPosX();

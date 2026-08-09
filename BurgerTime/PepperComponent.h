@@ -1,6 +1,8 @@
 #pragma once
 #include "BaseComponent.h"
 #include "Subject.h"
+#include "Event.h"
+#include "GameObject.h"
 #include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
 #include <vector>
@@ -26,7 +28,12 @@ public:
     void Render() override;
 
     int GetCharges() const { return m_charges; }
-    void AddCharge(int n) { m_charges += n; }
+
+    void AddCharge(int n)
+    {
+        m_charges += n;
+        NotifyPepperChanged();
+    }
 
 private:
     PlatformMovementComponent* m_player;
@@ -40,6 +47,15 @@ private:
     bool m_prevKeyDown{ false };
 
     dae::Subject m_subject;
+
+    void NotifyPepperChanged()
+    {
+        dae::Event event{ "PepperChanged" };
+        event.nbArgs = 1;
+        event.args[0] = dae::EventArg{ .intValue = m_charges };
+        m_subject.NotifyObservers(event, GetOwner());
+    }
+
     static constexpr float PEPPER_DURATION = 2.f;
     static constexpr float STUN_DURATION   = 3.f;
     // Pepper cloud: 2 char-widths forward, 1 char-height tall
