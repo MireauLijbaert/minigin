@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
 #include "LevelMap.h"
 #include "LevelLoader.h"
 #include <glm/glm.hpp>
@@ -11,6 +12,7 @@ enum class EnemyType { Hotdog, Egg, Pickle };
 class EnemyComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     EnemyComponent(dae::GameObject& owner,
                    const dae::LevelMap* levelMap,
                    glm::vec2 worldPos,
@@ -81,6 +83,7 @@ private:
     static constexpr float STUN_DURATION          = 3.f;
     static constexpr float RESPAWN_DELAY          = 4.f;
 
+    dae::Subject m_subject;
     void UpdateWalking(float dt);
     void SyncPosition();
 };

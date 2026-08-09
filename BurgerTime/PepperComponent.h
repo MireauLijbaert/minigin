@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
 #include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
 #include <vector>
@@ -14,6 +15,7 @@
 class PepperComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     PepperComponent(dae::GameObject& owner,
                     PlatformMovementComponent* player,
                     std::vector<EnemyComponent*>* enemies,
@@ -37,6 +39,7 @@ private:
     float m_pepperX{}, m_pepperY{}, m_pepperW{}, m_pepperH{};
     bool m_prevKeyDown{ false };
 
+    dae::Subject m_subject;
     static constexpr float PEPPER_DURATION = 2.f;
     static constexpr float STUN_DURATION   = 3.f;
     // Pepper cloud: 2 char-widths forward, 1 char-height tall

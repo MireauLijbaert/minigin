@@ -8,6 +8,8 @@ namespace dae {
         virtual ~SoundSystem() = default;
         virtual void Play(const std::string& filename, int volume) = 0;
         virtual void PlayMusic(const std::string& filename, int loops = -1) = 0;
+        // Plays sfxFile immediately, then starts musicFile once the SFX finishes.
+        virtual void PlayMusicAfter(const std::string& musicFile, const std::string& sfxFile, int sfxVolume, int loops = -1) = 0;
         virtual void StopMusic() = 0;
         virtual void SetMusicVolume(int volume) = 0;
         virtual void Update() = 0;
@@ -19,6 +21,7 @@ namespace dae {
         ~SdlSoundSystem();
         void Play(const std::string& filename, int volume) override;
         void PlayMusic(const std::string& filename, int loops = -1) override;
+        void PlayMusicAfter(const std::string& musicFile, const std::string& sfxFile, int sfxVolume, int loops = -1) override;
         void StopMusic() override;
         void SetMusicVolume(int volume) override;
         void Update() override;
@@ -31,6 +34,7 @@ namespace dae {
     public:
         void Play(const std::string&, int) override {}
         void PlayMusic(const std::string&, int) override {}
+        void PlayMusicAfter(const std::string&, const std::string&, int, int) override {}
         void StopMusic() override {}
         void SetMusicVolume(int) override {}
         void Update() override {}

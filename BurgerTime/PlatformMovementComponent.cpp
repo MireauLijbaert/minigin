@@ -2,6 +2,7 @@
 #include "EnemyComponent.h"
 #include "GameObject.h"
 #include "TimeSingleton.h"
+#include "Event.h"
 #include <SDL3/SDL.h>
 
 PlatformMovementComponent::PlatformMovementComponent(dae::GameObject& owner,
@@ -31,6 +32,7 @@ void PlatformMovementComponent::Kill()
     m_respawnTimer = RESPAWN_DELAY;
     if (m_health) m_health->LoseLife();
     GetOwner()->SetLocalPosition(-2000.f, -2000.f);
+    m_subject.NotifyObservers(dae::Event("PlayerDied"), GetOwner());
 
     if (m_enemies)
     {
@@ -56,6 +58,7 @@ void PlatformMovementComponent::Update()
             m_posY = m_startPos.y;
             m_state = PlayerState::Alive;
             SyncPosition();
+            m_subject.NotifyObservers(dae::Event("PlayerRespawned"), GetOwner());
         }
         return;
     }

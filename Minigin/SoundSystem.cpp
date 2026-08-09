@@ -16,14 +16,16 @@ namespace dae {
     // ---------------------------------------------------------------------------
     // Request types pushed onto the queue by the game thread
     // ---------------------------------------------------------------------------
-    struct PlaySoundRequest   { std::string filename; int volume; };
-    struct PlayMusicRequest   { std::string filename; int loops; };
-    struct StopMusicRequest   {};
-    struct SetMusicVolRequest { int volume; };
+    struct PlaySoundRequest        { std::string filename; int volume; };
+    struct PlayMusicRequest        { std::string filename; int loops; };
+    struct PlayMusicAfterRequest   { std::string musicFilename; std::string sfxFilename; int sfxVolume; int loops; };
+    struct StopMusicRequest        {};
+    struct SetMusicVolRequest      { int volume; };
 
     using AudioRequest = std::variant<
         PlaySoundRequest,
         PlayMusicRequest,
+        PlayMusicAfterRequest,
         StopMusicRequest,
         SetMusicVolRequest
     >;
@@ -42,6 +44,11 @@ namespace dae {
 
         // Dedicated track for background music
         MIX_Track* musicTrack{ nullptr };
+
+        // Set when PlayMusicAfter is used: monitor this SFX track, then start pendingMusicFile
+        MIX_Track* pendingSfxTrack{ nullptr };
+        std::string pendingMusicFile;
+        int pendingMusicLoops{ -1 };
 
         // Thread-safe queue
         std::queue<AudioRequest> queue;
@@ -67,6 +74,9 @@ namespace dae {
             for (MIX_Track* t : sfxTracks)
                 MIX_DestroyTrack(t);
 
+            // Free pending SFX track (PlayMusicAfter)
+            if (pendingSfxTrack) MIX_DestroyTrack(pendingSfxTrack);
+
             // Free music track
             if (musicTrack) MIX_DestroyTrack(musicTrack);
 
@@ -91,7 +101,22 @@ namespace dae {
         void WorkerLoop() {
             while (true) {
                 std::unique_lock<std::mutex> lock(mutex);
-                cv.wait(lock, [this] { return !queue.empty() || !running; });
+
+                // When waiting for an SFX to finish, poll every 50ms instead of sleeping forever
+                if (pendingSfxTrack)
+                    cv.wait_for(lock, std::chrono::milliseconds(50), [this] { return !queue.empty() || !running; });
+                else
+                    cv.wait(lock, [this] { return !queue.empty() || !running; });
+
+                // Check if the awaited SFX has finished — if so, start the music
+                if (pendingSfxTrack && !MIX_TrackPlaying(pendingSfxTrack))
+                {
+                    MIX_DestroyTrack(pendingSfxTrack);
+                    pendingSfxTrack = nullptr;
+                    lock.unlock();
+                    Handle(PlayMusicRequest{ pendingMusicFile, pendingMusicLoops });
+                    lock.lock();
+                }
 
                 while (!queue.empty()) {
                     AudioRequest req = std::move(queue.front());
@@ -158,6 +183,31 @@ namespace dae {
             sfxTracks.push_back(track);
         }
 
+        void Handle(const PlayMusicAfterRequest& r) {
+            if (!mixer) return;
+
+            // Cancel any previous pending music-after-sfx
+            if (pendingSfxTrack) {
+                MIX_DestroyTrack(pendingSfxTrack);
+                pendingSfxTrack = nullptr;
+            }
+
+            MIX_Audio* sfxAudio = GetAudio(r.sfxFilename, true);
+            if (!sfxAudio) return;
+
+            MIX_Track* track = MIX_CreateTrack(mixer);
+            if (!track) return;
+
+            MIX_SetTrackAudio(track, sfxAudio);
+            MIX_SetTrackGain(track, r.sfxVolume / 128.0f);
+            MIX_PlayTrack(track, 0);
+
+            // Store the worker loop polls this and starts music when it finishes
+            pendingSfxTrack  = track;
+            pendingMusicFile = r.musicFilename;
+            pendingMusicLoops = r.loops;
+        }
+
         void Handle(const PlayMusicRequest& r) {
             if (!mixer) return;
 
@@ -168,7 +218,7 @@ namespace dae {
             if (musicTrack && MIX_GetTrackAudio(musicTrack) == next && MIX_TrackPlaying(musicTrack))
                 return;
 
-            // Destroy old track and create a fresh one - cleaner than stop/set/play
+            // Destroy old track and create a fresh one cleaner than stop/set/play
             if (musicTrack) {
                 MIX_DestroyTrack(musicTrack);
                 musicTrack = nullptr;
@@ -208,12 +258,19 @@ namespace dae {
 
     void SdlSoundSystem::Play(const std::string& filename, int volume)
     {
+        if (filename.empty()) return;
         pImpl->Push(PlaySoundRequest{ filename, volume });
     }
 
     void SdlSoundSystem::PlayMusic(const std::string& filename, int loops)
     {
         pImpl->Push(PlayMusicRequest{ filename, loops });
+    }
+
+    void SdlSoundSystem::PlayMusicAfter(const std::string& musicFile, const std::string& sfxFile, int sfxVolume, int loops)
+    {
+        if (sfxFile.empty()) return;
+        pImpl->Push(PlayMusicAfterRequest{ musicFile, sfxFile, sfxVolume, loops });
     }
 
     void SdlSoundSystem::StopMusic()

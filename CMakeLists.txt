@@ -220,6 +220,8 @@ if(EMSCRIPTEN)
     "BurgerTime/GameOverWatcherComponent.h"
     "BurgerTime/GameOverScreenComponent.h"
     "BurgerTime/BonusItemComponent.h"
+    "BurgerTime/BtSounds.h"
+    "BurgerTime/SoundObserver.h"
   )
 else()
   set(TARGET_NAME minigin_game)
@@ -248,6 +250,8 @@ else()
     "BurgerTime/GameOverWatcherComponent.h"
     "BurgerTime/GameOverScreenComponent.h"
     "BurgerTime/BonusItemComponent.h"
+    "BurgerTime/BtSounds.h"
+    "BurgerTime/SoundObserver.h"
   )
 endif()
 

@@ -1,6 +1,7 @@
 #include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
 #include "ScoreManager.h"
+#include "Event.h"
 #include "GameObject.h"
 #include "TimeSingleton.h"
 #include <cmath>
@@ -53,6 +54,7 @@ void EnemyComponent::Stun()
     m_state = State::Stunned;
     m_stateTimer = STUN_DURATION;
     ScoreManager::GetInstance().AddScore(100);
+    m_subject.NotifyObservers(dae::Event("EnemyStunned"), GetOwner());
 }
 
 void EnemyComponent::CatchByBurger()

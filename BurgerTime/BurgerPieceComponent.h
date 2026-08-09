@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
 #include "LevelLoader.h"
 #include "LevelMap.h"
 #include "Texture2D.h"
@@ -15,6 +16,7 @@ class PlatformMovementComponent;
 class BurgerPieceComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     BurgerPieceComponent(dae::GameObject& owner,
                          const dae::LevelMap* levelMap,
                          BurgerType type,
@@ -64,6 +66,7 @@ private:
     float m_pieceH{};
     float m_segW{};  
 
+    dae::Subject m_subject;
     float GetLeftEdgeX() const;
     void  CheckPlayerPress();
     bool  AllPressed() const;

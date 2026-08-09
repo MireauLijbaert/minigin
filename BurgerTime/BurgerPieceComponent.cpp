@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "TimeSingleton.h"
+#include "Event.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cmath>
@@ -75,6 +76,7 @@ void BurgerPieceComponent::CheckPlayerPress()
         {
             m_pressed[i] = true;
             m_segmentDrop[i] = m_maxDrop;
+            m_subject.NotifyObservers(dae::Event("BurgerSegmentPressed"), GetOwner());
         }
     }
 }
@@ -121,26 +123,27 @@ void BurgerPieceComponent::StartFalling()
     }
 
     // Catch any enemies standing on this burger's platform row
-    if (m_enemies)
+    if (m_caughtEnemies.empty() && m_enemies)
     {
         float leftEdge = GetLeftEdgeX();
         for (auto* enemy : *m_enemies)
         {
             if (!enemy->IsAlive()) continue;
             if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
-                && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge  + m_pieceW)
+                && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
             {
                 m_caughtEnemies.push_back(enemy);
                 enemy->CatchByBurger();
             }
         }
-    }
 
-    if (!m_caughtEnemies.empty())
-        m_extraFloors = 2;
+        if (!m_caughtEnemies.empty())
+            m_extraFloors = 2;
+    }
 
     m_startFallingY = m_fallingY;
     m_state = State::Falling;
+    m_subject.NotifyObservers(dae::Event("BurgerDropped"), GetOwner());
 }
 
 void BurgerPieceComponent::PushDown()
@@ -174,6 +177,7 @@ void BurgerPieceComponent::OnLanded()
                 && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
             {
                 ScoreManager::GetInstance().AddScore(enemy->GetSquishScore());
+                m_subject.NotifyObservers(dae::Event("EnemySquished"), GetOwner());
                 enemy->Kill();
             }
         }
@@ -237,12 +241,14 @@ void BurgerPieceComponent::OnLanded()
         static const int fallScores[] = { 500, 1000, 2000, 4000 };
         ScoreManager::GetInstance().AddScore(
             fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)]);
+        m_subject.NotifyObservers(dae::Event("EnemyFell"), GetOwner());
         for (auto* e : m_caughtEnemies) e->Kill();
         m_caughtEnemies.clear();
     }
 
     m_extraFloors = 0;
     m_state = State::Idle;
+    m_subject.NotifyObservers(dae::Event("BurgerLanded"), GetOwner());
 }
 
 void BurgerPieceComponent::Update()

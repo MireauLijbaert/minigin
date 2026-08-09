@@ -24,6 +24,10 @@
 #include "GameOverWatcherComponent.h"
 #include "GameOverScreenComponent.h"
 #include "BonusItemComponent.h"
+#include "BtSounds.h"
+#include "ServiceLocator.h"
+#include "SoundSystem.h"
+#include "SoundObserver.h"
 
 #include <filesystem>
 #include <string>
@@ -72,6 +76,8 @@ static void LoadLevel(int levelNum)
 
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
     auto font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
+
+    dae::ServiceLocator::GetSoundSystem().PlayMusicAfter(BtSounds::BGM_LEVEL, BtSounds::SFX_GAME_START, 128);
 
     // Background
     {
@@ -165,26 +171,30 @@ static void LoadLevel(int levelNum)
     }
 
     // Bonus item, spawns at the center of the level
+    BonusItemComponent* bonusPtr = nullptr;
     {
         glm::vec2 bonusPos{
             transform.WorldX(104.f),   // horizontal center of the 208px-wide sprite
             transform.WorldY(96.f)     // roughly mid-level vertically
         };
         auto bonusObj = std::make_unique<dae::GameObject>();
-        bonusObj->AddComponent(std::make_unique<BonusItemComponent>(
+        auto bonusComp = std::make_unique<BonusItemComponent>(
             *bonusObj, bonusPos, charW, playerMovePtr, pepperPtr,
             /*score*/   500,
             /*first*/   10.f,
             /*active*/  10.f,
             /*respawn*/ 25.f
-        ));
+        );
+        bonusPtr = bonusComp.get();
+        bonusObj->AddComponent(std::move(bonusComp));
         scene.Add(std::move(bonusObj));
     }
 
     // Level completion (N to skip, auto on all burgers in cups)
+    LevelManagerComponent* mgrPtr = nullptr;
     {
         auto mgr = std::make_unique<dae::GameObject>();
-        mgr->AddComponent(std::make_unique<LevelManagerComponent>(
+        auto mgrComp = std::make_unique<LevelManagerComponent>(
             *mgr, &burgers,
             [playerHealthPtr]()
             {
@@ -196,7 +206,9 @@ static void LoadLevel(int levelNum)
                     LoadLevel(next);
                 });
             }
-        ));
+        );
+        mgrPtr = mgrComp.get();
+        mgr->AddComponent(std::move(mgrComp));
         scene.Add(std::move(mgr));
     }
 
@@ -216,6 +228,17 @@ static void LoadLevel(int levelNum)
         ));
         scene.Add(std::move(watcher));
     }
+
+    // Wire SoundObserver to all components that fire audio events
+    static SoundObserver soundObserver;
+    playerMovePtr->GetSubject().AddObserver(&soundObserver);
+    pepperPtr->GetSubject().AddObserver(&soundObserver);
+    for (auto* enemy : enemies)
+        enemy->GetSubject().AddObserver(&soundObserver);
+    for (auto* burger : burgers)
+        burger->GetSubject().AddObserver(&soundObserver);
+    if (bonusPtr) bonusPtr->GetSubject().AddObserver(&soundObserver);
+    if (mgrPtr)   mgrPtr->GetSubject().AddObserver(&soundObserver);
 
     // HUD: score
     {
@@ -327,6 +350,7 @@ static void load()
 }
 
 int main(int, char* []) {
+    dae::ServiceLocator::RegisterSoundSystem(std::make_unique<dae::SdlSoundSystem>());
 #if __EMSCRIPTEN__
     fs::path data_location = "";
 #else

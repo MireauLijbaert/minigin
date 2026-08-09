@@ -1,10 +1,13 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
+#include "Event.h"
 #include "PlatformMovementComponent.h"
 #include "PepperComponent.h"
 #include "ScoreManager.h"
 #include "TimeSingleton.h"
 #include "Renderer.h"
+#include "GameObject.h"
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 
@@ -14,6 +17,7 @@
 class BonusItemComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     BonusItemComponent(dae::GameObject& owner,
                        glm::vec2 worldPos,   // center of the item (world coords)
                        float size,            // width = height (match charW)
@@ -46,6 +50,7 @@ public:
             {
                 m_active = true;
                 m_timer  = m_activeTime;
+                m_subject.NotifyObservers(dae::Event("BonusAppeared"), GetOwner());
             }
             return;
         }
@@ -102,11 +107,14 @@ private:
     float m_timer;
     bool  m_active;
 
+    dae::Subject m_subject;
+
     void Pickup()
     {
         m_active = false;
         m_timer  = m_respawnTime;
         ScoreManager::GetInstance().AddScore(m_score);
         m_pepper->AddCharge(1);
+        m_subject.NotifyObservers(dae::Event("BonusPickedUp"), GetOwner());
     }
 };

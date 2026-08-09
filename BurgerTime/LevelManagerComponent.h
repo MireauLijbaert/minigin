@@ -1,7 +1,10 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
+#include "Event.h"
 #include "BurgerPieceComponent.h"
 #include "TimeSingleton.h"
+#include "GameObject.h"
 #include <functional>
 #include <vector>
 #include <SDL3/SDL.h>
@@ -9,6 +12,7 @@
 class LevelManagerComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     LevelManagerComponent(dae::GameObject& owner,
                           std::vector<BurgerPieceComponent*>* burgers,
                           std::function<void()> onComplete)
@@ -38,7 +42,11 @@ public:
             bool allDone = true;
             for (auto* b : *m_burgers)
                 if (!b->IsInCup()) { allDone = false; break; }
-            if (allDone) m_completing = true;
+            if (allDone)
+            {
+                m_completing = true;
+                m_subject.NotifyObservers(dae::Event("LevelComplete"), GetOwner());
+            }
         }
 
         if (!m_completing) return;
@@ -59,5 +67,6 @@ private:
     bool m_prevSkip{ false };
     float m_timer{ COMPLETE_DELAY };
 
-    static constexpr float COMPLETE_DELAY = 2.f;
+    dae::Subject m_subject;
+    static constexpr float COMPLETE_DELAY = 3.5f;
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "Subject.h"
 #include "LevelMap.h"
 #include "LevelLoader.h"
 #include "HealthComponent.h"
@@ -11,6 +12,7 @@ class EnemyComponent;
 class PlatformMovementComponent : public dae::BaseComponent
 {
 public:
+    dae::Subject& GetSubject() { return m_subject; }
     PlatformMovementComponent(dae::GameObject& owner,
                               const dae::LevelMap* levelMap,
                               glm::vec2 worldPos,
@@ -52,5 +54,6 @@ private:
     static constexpr float STEP_INTERVAL  = 1.f / 60.f;
     static constexpr float RESPAWN_DELAY  = 2.f;
 
+    dae::Subject m_subject;
     void SyncPosition();
 };

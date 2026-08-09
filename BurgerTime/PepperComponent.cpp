@@ -1,6 +1,7 @@
 #include "PepperComponent.h"
 #include "Renderer.h"
 #include "TimeSingleton.h"
+#include "Event.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 
@@ -84,6 +85,7 @@ void PepperComponent::Update()
 
         m_active = true;
         m_activeTimer = PEPPER_DURATION;
+        m_subject.NotifyObservers(dae::Event("PepperFired"), GetOwner());
     }
 
     m_prevKeyDown = keyDown;
