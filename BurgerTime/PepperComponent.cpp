@@ -1,5 +1,6 @@
 #include "PepperComponent.h"
 #include "Renderer.h"
+#include "ResourceManager.h"
 #include "TimeSingleton.h"
 #include "Event.h"
 #include <SDL3/SDL.h>
@@ -16,18 +17,37 @@ PepperComponent::PepperComponent(dae::GameObject& owner,
     , m_charW{ charWorldW }
     , m_charH{ charWorldH }
     , m_charges{ charges }
-{}
+{
+    auto& rm = dae::ResourceManager::GetInstance();
+    m_texH = rm.LoadTexture("bt_pepper_h.png");
+    m_texD = rm.LoadTexture("bt_pepper_d.png");
+    m_texU = rm.LoadTexture("bt_pepper_u.png");
+}
 
 void PepperComponent::Update()
 {
     const float dt = dae::Time::GetInstance().GetDeltaTime();
 
-    // Tick active pepper timer
+    // Tick active pepper timer and advance cloud animation
     if (m_active)
     {
         m_activeTimer -= dt;
         if (m_activeTimer <= 0.f)
+        {
             m_active = false;
+        }
+        else
+        {
+            if (m_cloudFrame < CLOUD_FRAMES) // still animating
+            {
+                m_cloudFrameTimer += dt;
+                if (m_cloudFrameTimer >= 1.f / CLOUD_FPS)
+                {
+                    m_cloudFrameTimer -= 1.f / CLOUD_FPS;
+                    ++m_cloudFrame; // no wrap, stops at CLOUD_FRAMES (done)
+                }
+            }
+        }
         return;
     }
 
@@ -84,9 +104,14 @@ void PepperComponent::Update()
             }
         }
 
+        m_cloudDir = dir;
+        m_cloudFrame = 0;
+        m_cloudFrameTimer = 0.f;
         m_active = true;
         m_activeTimer = PEPPER_DURATION;
+        m_player->FreezeFor(THROW_FREEZE_DURATION);
         m_subject.NotifyObservers(dae::Event("PepperFired"), GetOwner());
+        if (m_pepperFiredCallback) m_pepperFiredCallback();
     }
 
     m_prevKeyDown = keyDown;
@@ -96,17 +121,54 @@ void PepperComponent::Render()
 {
     if (!m_active) return;
 
+    // Pick the right texture strip based on throw direction
+    std::shared_ptr<dae::Texture2D> tex{};
+    bool flipH = false;
+    if (m_cloudDir.x != 0.f)
+    {
+        tex   = m_texH;
+        flipH = (m_cloudDir.x > 0.f); // base=LEFT, flip for right throw
+    }
+    else if (m_cloudDir.y > 0.f)
+        tex = m_texU;
+    else
+        tex = m_texD;
+
+    if (!tex || m_cloudFrame >= CLOUD_FRAMES) return; // animation finished
+    SDL_Texture* sdlTex = tex->GetSDLTexture();
+    if (!sdlTex) return;
+
+    glm::vec2 texSize = tex->GetSize();
+    float frameW = texSize.x / static_cast<float>(CLOUD_FRAMES);
+
+    SDL_FRect src{
+        static_cast<float>(m_cloudFrame) * frameW,
+        0.f, frameW, texSize.y
+    };
+
+    // Centre the cloud sprite (charW x charH) within the pepper zone.
+    // Vertical throws: subtract charW/2 to centre the sprite on the player's X,
+    //   then shift 0.5 charH toward the player so the cloud is adjacent (not 1 charH away).
+    float cloudX = m_pepperX + (m_pepperW - m_charW) * 0.5f;
+    float cloudY = m_pepperY + (m_pepperH - m_charH) * 0.5f;
+    if (m_cloudDir.x == 0.f)
+    {
+        cloudX -= m_charW * 0.5f;
+        // shift toward player: up throw moves cloud down, down throw moves cloud up
+        const float sign = m_cloudDir.y > 0.f ? 1.f : -1.f;
+        cloudY += sign * m_charH * 0.5f;
+    }
+    else
+    {
+        // Pull cloud to player's edge (remove the charW/2 gap)
+        const float fwd = m_cloudDir.x > 0.f ? 1.f : -1.f;
+        cloudX -= fwd * m_charW * 0.5f;
+    }
+    SDL_FRect dst{ cloudX, cloudY, m_charW, m_charH };
+
     SDL_Renderer* renderer = dae::Renderer::GetInstance().GetSDLRenderer();
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-    // Flicker: alternate opacity based on remaining timer
-    float t = m_activeTimer / PEPPER_DURATION;
-    Uint8 alpha = static_cast<Uint8>(120 + 100 * std::sin(m_activeTimer * 20.f));
-    SDL_SetRenderDrawColor(renderer, 255, 220, 50, alpha);
-
-    SDL_FRect rect{ m_pepperX, m_pepperY, m_pepperW, m_pepperH };
-    SDL_RenderFillRect(renderer, &rect);
-
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-    (void)t;
+    if (flipH)
+        SDL_RenderTextureRotated(renderer, sdlTex, &src, &dst, 0.0, nullptr, SDL_FLIP_HORIZONTAL);
+    else
+        SDL_RenderTexture(renderer, sdlTex, &src, &dst);
 }

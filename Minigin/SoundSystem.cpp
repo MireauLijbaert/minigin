@@ -10,6 +10,7 @@
 #include <atomic>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 namespace dae {
 
@@ -21,13 +22,15 @@ namespace dae {
     struct PlayMusicAfterRequest   { std::string musicFilename; std::string sfxFilename; int sfxVolume; int loops; };
     struct StopMusicRequest        {};
     struct SetMusicVolRequest      { int volume; };
+    struct SetMuteRequest          { bool muted; };
 
     using AudioRequest = std::variant<
         PlaySoundRequest,
         PlayMusicRequest,
         PlayMusicAfterRequest,
         StopMusicRequest,
-        SetMusicVolRequest
+        SetMusicVolRequest,
+        SetMuteRequest
     >;
 
     // ---------------------------------------------------------------------------
@@ -50,12 +53,17 @@ namespace dae {
         std::string pendingMusicFile;
         int pendingMusicLoops{ -1 };
 
+        // Last music request — remembered so we can restart it on unmute.
+        std::string m_lastMusicFile;
+        int         m_lastMusicLoops{ -1 };
+
         // Thread-safe queue
         std::queue<AudioRequest> queue;
         std::mutex mutex;
         std::condition_variable cv;
         std::thread worker;
         std::atomic<bool> running{ true };
+        std::atomic<bool> m_muted{ false };
 
         Impl() {
             MIX_Init();
@@ -167,6 +175,7 @@ namespace dae {
 
         void Handle(const PlaySoundRequest& r) {
             if (!mixer) return;
+            if (m_muted) return;   // suppress all SFX while muted
             MIX_Audio* audio = GetAudio(r.filename, true);
             if (!audio) return;
 
@@ -183,8 +192,42 @@ namespace dae {
             sfxTracks.push_back(track);
         }
 
+        void Handle(const SetMuteRequest& r) {
+            m_muted = r.muted;
+
+            if (r.muted) {
+                // Stop the intro jingle (PlayMusicAfter pending SFX).
+                if (pendingSfxTrack) {
+                    MIX_StopTrack(pendingSfxTrack, 0);
+                    MIX_DestroyTrack(pendingSfxTrack);
+                    pendingSfxTrack = nullptr;
+                    pendingMusicFile.clear();
+                }
+                // Stop BGM.
+                if (musicTrack) {
+                    MIX_StopTrack(musicTrack, 0);
+                    MIX_DestroyTrack(musicTrack);
+                    musicTrack = nullptr;
+                }
+                // Stop any playing SFX.
+                for (MIX_Track* t : sfxTracks)
+                    MIX_StopTrack(t, 0);
+            } else {
+                // Unmute: restart the last known music from the beginning.
+                if (!m_lastMusicFile.empty())
+                    Handle(PlayMusicRequest{ m_lastMusicFile, m_lastMusicLoops });
+            }
+        }
+
         void Handle(const PlayMusicAfterRequest& r) {
             if (!mixer) return;
+
+            // Always remember so unmute can replay the full sequence.
+            m_lastMusicFile  = r.musicFilename;
+            m_lastMusicLoops = r.loops;
+
+            // Don't play anything while muted.
+            if (m_muted) return;
 
             // Cancel any previous pending music-after-sfx
             if (pendingSfxTrack) {
@@ -202,14 +245,21 @@ namespace dae {
             MIX_SetTrackGain(track, r.sfxVolume / 128.0f);
             MIX_PlayTrack(track, 0);
 
-            // Store the worker loop polls this and starts music when it finishes
-            pendingSfxTrack  = track;
-            pendingMusicFile = r.musicFilename;
+            // Store: worker loop polls this and starts music when it finishes
+            pendingSfxTrack   = track;
+            pendingMusicFile  = r.musicFilename;
             pendingMusicLoops = r.loops;
         }
 
         void Handle(const PlayMusicRequest& r) {
             if (!mixer) return;
+
+            // Always remember so unmute can replay it.
+            m_lastMusicFile  = r.filename;
+            m_lastMusicLoops = r.loops;
+
+            // Don't play while muted.
+            if (m_muted) return;
 
             MIX_Audio* next = GetAudio(r.filename, false);
             if (!next) return;
@@ -218,7 +268,7 @@ namespace dae {
             if (musicTrack && MIX_GetTrackAudio(musicTrack) == next && MIX_TrackPlaying(musicTrack))
                 return;
 
-            // Destroy old track and create a fresh one cleaner than stop/set/play
+            // Destroy old track and create a fresh one
             if (musicTrack) {
                 MIX_DestroyTrack(musicTrack);
                 musicTrack = nullptr;
@@ -281,6 +331,17 @@ namespace dae {
     void SdlSoundSystem::SetMusicVolume(int volume)
     {
         pImpl->Push(SetMusicVolRequest{ volume });
+    }
+
+    void SdlSoundSystem::SetMuted(bool muted)
+    {
+        pImpl->Push(SetMuteRequest{ muted });
+        pImpl->m_muted = muted;   // also update the atomic immediately so IsMuted() is coherent
+    }
+
+    bool SdlSoundSystem::IsMuted() const
+    {
+        return pImpl->m_muted.load();
     }
 
     // Update() is a no-op: the worker thread processes the queue independently.

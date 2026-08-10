@@ -28,6 +28,8 @@
 #include "ServiceLocator.h"
 #include "SoundSystem.h"
 #include "SoundObserver.h"
+#include "AnimatedSpriteComponent.h"
+#include "CharacterAnimators.h"
 
 #include <filesystem>
 #include <string>
@@ -56,6 +58,92 @@ static int s_currentLives = PLAYER_LIVES;
 static void LoadGameOver();
 static void LoadLevel(int levelNum);
 
+// ---- Enemy spawn data -------------------------------------------------------
+
+struct EnemySpawnDef
+{
+    EnemyType   type;
+    float       spawnX;   // sprite-space X (<0 = off left, >208 = off right)
+    float       spawnY;   // sprite-space Y (platform row height)
+    float       delay;    // seconds before this enemy starts moving
+};
+
+// Sprite-space Y for each platform row: GridPlatformY(row) = 1 + row*16
+static constexpr float TOP_ROW_Y    =  1.f;   // row 0
+static constexpr float BOTTOM_ROW_Y = 145.f;  // row 9
+static constexpr float OFF_LEFT_X   = -16.f;
+static constexpr float OFF_RIGHT_X  = 224.f;
+
+static const std::vector<EnemySpawnDef> s_levelSpawns[] =
+{
+    // Level 1: egg bottom-right, hotdog bottom-left, hotdog top-right, hotdog top-left
+    {
+        { EnemyType::Egg,    OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Hotdog, OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+    // Levels 2-6: placeholder
+    {
+        { EnemyType::Hotdog, OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Hotdog, OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+    {
+        { EnemyType::Hotdog, OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Egg,    OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Egg,    OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+    {
+        { EnemyType::Hotdog, OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Egg,    OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Pickle, OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Hotdog, OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+    {
+        { EnemyType::Egg,    OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Egg,    OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Pickle, OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Pickle, OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+    {
+        { EnemyType::Pickle, OFF_RIGHT_X, BOTTOM_ROW_Y, 0.5f },
+        { EnemyType::Egg,    OFF_LEFT_X,  BOTTOM_ROW_Y, 1.0f },
+        { EnemyType::Pickle, OFF_RIGHT_X, TOP_ROW_Y,    1.5f },
+        { EnemyType::Egg,    OFF_LEFT_X,  TOP_ROW_Y,    2.0f },
+    },
+};
+
+static void SetupEnemyClips(AnimatedSpriteComponent* anim, EnemyType type)
+{
+    switch (type)
+    {
+    case EnemyType::Egg:
+        anim->AddClip("walk_d",  "bt_egg_walk_d.png",   2, 6.f);
+        anim->AddClip("walk_h",  "bt_egg_walk_h.png",   2, 6.f);
+        anim->AddClip("walk_u",  "bt_egg_walk_u.png",   2, 6.f);
+        anim->AddClip("squish",  "bt_egg_squish.png",   4, 6.f, false);
+        anim->AddClip("stunned", "bt_egg_stunned.png",  2, 4.f);
+        break;
+    case EnemyType::Pickle:
+        anim->AddClip("walk_d",  "bt_pickle_walk_d.png",   2, 6.f);
+        anim->AddClip("walk_h",  "bt_pickle_walk_h.png",   2, 6.f);
+        anim->AddClip("walk_u",  "bt_pickle_walk_u.png",   2, 6.f);
+        anim->AddClip("squish",  "bt_pickle_squish.png",   4, 6.f, false);
+        anim->AddClip("stunned", "bt_pickle_stunned.png",  2, 4.f);
+        break;
+    default: // Hotdog
+        anim->AddClip("walk_d",  "bt_hotdog_walk_d.png",   2, 6.f);
+        anim->AddClip("walk_h",  "bt_hotdog_walk_h.png",   2, 6.f);
+        anim->AddClip("walk_u",  "bt_hotdog_walk_u.png",   2, 6.f);
+        anim->AddClip("squish",  "bt_hotdog_squish.png",   4, 6.f, false);
+        anim->AddClip("stunned", "bt_hotdog_stunned.png",  2, 4.f);
+        break;
+    }
+}
+
 static void LoadLevel(int levelNum)
 {
     s_currentLevel = levelNum;
@@ -74,8 +162,13 @@ static void LoadLevel(int levelNum)
 
     levelData = LevelLoader::Load("Data/bt_level" + std::to_string(levelNum) + ".txt", transform);
 
+    // Configure popup scale to match character size in screen coords.
+    ScorePopupManager::GetInstance().SetDisplaySize(charW, charH);
+    ScorePopupManager::GetInstance().Reset();
+
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
-    auto font = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
+    auto font      = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
+    auto smallFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 14);
 
     dae::ServiceLocator::GetSoundSystem().PlayMusicAfter(BtSounds::BGM_LEVEL, BtSounds::SFX_GAME_START, 128);
 
@@ -93,10 +186,18 @@ static void LoadLevel(int levelNum)
     // Player
     auto playerObj = std::make_unique<dae::GameObject>();
 
-    auto playerRender = std::make_unique<dae::RenderComponent>(*playerObj);
-    playerRender->SetTexture("bt_player.png");
-    playerRender->SetSize(charW, charH);
-    playerObj->AddComponent(std::move(playerRender));
+    auto playerAnim = std::make_unique<AnimatedSpriteComponent>(*playerObj, charW, charH);
+    playerAnim->AddClip("idle",     "bt_player_idle.png",     1, 1.f);          // standing still (front-facing)
+    playerAnim->AddClip("idle_u",   "bt_player_idle_u.png",   1, 1.f);          // standing still (back-turned, after moving up)
+    playerAnim->AddClip("walk_h",   "bt_player_walk_l.png",   3, 8.f);          // sideways, base=LEFT, flip for RIGHT
+    playerAnim->AddClip("walk_u",   "bt_player_walk_u.png",   3, 8.f);          // climbing up
+    playerAnim->AddClip("walk_d",   "bt_player_walk_d.png",   3, 8.f);          // walking down (front-facing)
+    playerAnim->AddClip("die",      "bt_player_die.png",      6, 6.f, false);   // death, non-looping
+    playerAnim->AddClip("pepper_d", "bt_player_pepper_d.png", 1, 1.f);          // throw down
+    playerAnim->AddClip("pepper_h", "bt_player_pepper_h.png", 1, 1.f);          // throw sideways
+    playerAnim->AddClip("pepper_u", "bt_player_pepper_u.png", 1, 1.f);          // throw up
+    AnimatedSpriteComponent* playerAnimPtr = playerAnim.get();
+    playerObj->AddComponent(std::move(playerAnim));
 
     auto playerHealth = std::make_unique<dae::HealthComponent>(*playerObj, s_currentLives);
     dae::HealthComponent* playerHealthPtr = playerHealth.get();
@@ -111,33 +212,53 @@ static void LoadLevel(int levelNum)
     playerObj->AddComponent(std::move(playerMove));
 
     auto pepper = std::make_unique<PepperComponent>(
-        *playerObj, playerMovePtr, &enemies, charW, charH, 3
+        *playerObj, playerMovePtr, &enemies, charW, charH, 5
     );
     PepperComponent* pepperPtr = pepper.get();
     playerObj->AddComponent(std::move(pepper));
 
+    // Player animator (queries PlatformMovementComponent facing dir each frame)
+    auto playerAnimator = std::make_unique<PlayerAnimatorComponent>(
+        *playerObj, playerMovePtr, playerAnimPtr);
+    PlayerAnimatorComponent* playerAnimatorPtr = playerAnimator.get();
+    playerObj->AddComponent(std::move(playerAnimator));
+
+    // Wire pepper throw animator so the throw pose plays for 0.5s
+    pepperPtr->SetPepperFiredCallback([playerAnimatorPtr]() {
+        playerAnimatorPtr->OnPepperFired();
+    });
+
     scene.Add(std::move(playerObj));
 
-    // Enemies
-    // Spawn off left/right edges so enemies walk in from outside
-    const glm::vec2 enemySpawns[] = {
-        { transform.WorldX(-16.f), levelData.playerStart.y },
-        { transform.WorldX(224.f), levelData.playerStart.y }
-    };
-    for (const auto& spawnPos : enemySpawns)
+    // Enemies spawn data is per-level (type, off-screen position, stagger delay)
+    const auto& spawnDefs = s_levelSpawns[std::min(levelNum - 1, MAX_LEVEL - 1)];
+    for (const auto& def : spawnDefs)
     {
-        auto enemyObj    = std::make_unique<dae::GameObject>();
-        auto enemyRender = std::make_unique<dae::RenderComponent>(*enemyObj);
-        enemyRender->SetTexture("bt_hotdog.png");
-        enemyRender->SetSize(charW, charH);
-        enemyObj->AddComponent(std::move(enemyRender));
+        glm::vec2 spawnPos{ transform.WorldX(def.spawnX), transform.WorldY(def.spawnY) };
+
+        auto enemyObj  = std::make_unique<dae::GameObject>();
+
+        // Animated sprite (replaces static RenderComponent)
+        auto enemyAnim = std::make_unique<AnimatedSpriteComponent>(*enemyObj, charW, charH);
+        SetupEnemyClips(enemyAnim.get(), def.type);
+        AnimatedSpriteComponent* enemyAnimPtr = enemyAnim.get();
+        enemyObj->AddComponent(std::move(enemyAnim));
 
         auto enemyComp = std::make_unique<EnemyComponent>(
-            *enemyObj, levelData.map.get(), spawnPos, charW, charH, transform, playerMovePtr
+            *enemyObj, levelData.map.get(), spawnPos, charW, charH, transform, playerMovePtr, def.type
         );
-        enemies.push_back(enemyComp.get());
+        EnemyComponent* enemyPtr = enemyComp.get();
+        enemies.push_back(enemyPtr);
         enemyObj->AddComponent(std::move(enemyComp));
+
+        // Animator drives clip/flip based on enemy state
+        enemyObj->AddComponent(std::make_unique<EnemyAnimatorComponent>(
+            *enemyObj, enemyPtr, enemyAnimPtr));
+
         scene.Add(std::move(enemyObj));
+
+        // Stagger initial entry so enemies don't all appear at once
+        enemyPtr->Reset(def.delay);
     }
 
     // Burger pieces
@@ -240,53 +361,144 @@ static void LoadLevel(int levelNum)
     if (bonusPtr) bonusPtr->GetSubject().AddObserver(&soundObserver);
     if (mgrPtr)   mgrPtr->GetSubject().AddObserver(&soundObserver);
 
-    // HUD: score
+    // HUD layout constants
+    // Left panel:  x = 0 .. LEVEL_OFFSET_X (~231px)
+    // Right panel: x = LEVEL_OFFSET_X + LEVEL_DST_W .. 1024 (~793..1024px)
+    const float leftCX  = LEVEL_OFFSET_X * 0.5f;          // ~115px centre
+    const float rightX0 = LEVEL_OFFSET_X + LEVEL_DST_W;   // ~793px
+    const float rightCX = rightX0 + (1024.f - rightX0) * 0.5f; // ~909px
+    const float iconW   = charW;
+    const float iconH   = charH;
+
+    // ---- Top centre: HI-SCORE ----
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(10.f, 10.f);
+        obj->SetLocalPosition(512.f - 30.f, 6.f);   // centred in 1024px window
         auto render = std::make_unique<dae::RenderComponent>(*obj);
-        dae::RenderComponent* renderPtr = render.get();
+        dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, renderPtr, "Score: 0", font);
-        dae::TextComponent* textPtr = text.get();
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "HI-SCORE", smallFont));
+        scene.Add(std::move(obj));
+    }
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(512.f - 20.f, 22.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp,
+            std::to_string(ScoreManager::GetInstance().GetHiScore()), font);
+        dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
-        obj->AddComponent(std::make_unique<ScoreDisplayComponent>(*obj, textPtr));
+        obj->AddComponent(std::make_unique<HiScoreDisplayComponent>(*obj, tp));
         scene.Add(std::move(obj));
     }
 
-    // HUD: lives
+    // ---- Left panel ----
+
+    // "1UP" static label
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(10.f, 32.f);
+        obj->SetLocalPosition(leftCX - 16.f, 6.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
-        dae::RenderComponent* renderPtr = render.get();
+        dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, renderPtr,
-            "Lives: " + std::to_string(s_currentLives), font);
-        dae::TextComponent* textPtr = text.get();
-        obj->AddComponent(std::move(text));
-        obj->AddComponent(std::make_unique<LivesDisplayComponent>(*obj, textPtr, playerHealthPtr));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "1UP", smallFont));
         scene.Add(std::move(obj));
     }
 
-    // HUD: pepper
+    // Score value (updates via observer)
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(10.f, 54.f);
+        obj->SetLocalPosition(leftCX - 20.f, 22.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
-        dae::RenderComponent* renderPtr = render.get();
+        dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, renderPtr, "Pepper: 3", font);
-        dae::TextComponent* textPtr = text.get();
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "0", font);
+        dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
-        obj->AddComponent(std::make_unique<PepperDisplayComponent>(*obj, textPtr, pepperPtr));
+        obj->AddComponent(std::make_unique<ScoreDisplayComponent>(*obj, tp));
+        scene.Add(std::move(obj));
+    }
+
+    // Life icons (sprite-based, observer)
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(0.f, 0.f);
+        const float livesStartX = 12.f;
+        const float livesY      = LEVEL_OFFSET_Y + LEVEL_DST_H - iconH - 8.f;
+        obj->AddComponent(std::make_unique<LivesSpriteComponent>(
+            *obj, playerHealthPtr, iconW, iconH, livesStartX, livesY));
+        scene.Add(std::move(obj));
+    }
+
+    // ---- Right panel ----
+
+    // "PEPPER" static label
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(rightCX - 26.f, 6.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "PEPPER", smallFont));
+        scene.Add(std::move(obj));
+    }
+
+    // Pepper count (updates via observer)
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(rightCX - 6.f, 22.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "5", font);
+        dae::TextComponent* tp = text.get();
+        obj->AddComponent(std::move(text));
+        obj->AddComponent(std::make_unique<PepperDisplayComponent>(*obj, tp, pepperPtr));
+        scene.Add(std::move(obj));
+    }
+
+    // Level number label + value
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(rightCX - 20.f, 44.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(
+            *obj, rp, "LV " + std::to_string(s_currentLevel), smallFont));
+        scene.Add(std::move(obj));
+    }
+
+    // ---- Score popups (update + render each frame) ----
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(0.f, 0.f);
+        obj->AddComponent(std::make_unique<ScorePopupComponent>(*obj));
+        scene.Add(std::move(obj));
+    }
+
+    // ---- Mute toggle (M key) bottom of right panel ----
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        const float muteY = LEVEL_OFFSET_Y + LEVEL_DST_H - 20.f;
+        obj->SetLocalPosition(rightX0 + 8.f, muteY);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "[M] SOUND", smallFont);
+        dae::TextComponent* tp = text.get();
+        obj->AddComponent(std::move(text));
+        obj->AddComponent(std::make_unique<MuteToggleComponent>(*obj, tp));
         scene.Add(std::move(obj));
     }
 }
 
 static void LoadGameOver()
 {
-    int finalScore = ScoreManager::GetInstance().GetScore();
+    int finalScore  = ScoreManager::GetInstance().GetScore();
+    int finalHiScore = ScoreManager::GetInstance().GetHiScore();
 
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
     auto bigFont   = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 48);
@@ -295,7 +507,7 @@ static void LoadGameOver()
     // "GAME OVER"
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(340.f, 220.f);
+        obj->SetLocalPosition(340.f, 200.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* renderPtr = render.get();
         obj->AddComponent(std::move(render));
@@ -306,24 +518,43 @@ static void LoadGameOver()
     // Score
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(400.f, 300.f);
+        obj->SetLocalPosition(400.f, 280.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* renderPtr = render.get();
         obj->AddComponent(std::move(render));
         obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, renderPtr,
-            "Score: " + std::to_string(finalScore), smallFont));
+            "1UP  " + std::to_string(finalScore), smallFont));
+        scene.Add(std::move(obj));
+    }
+
+    // Hi-score
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(400.f, 310.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* renderPtr = render.get();
+        obj->AddComponent(std::move(render));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, renderPtr,
+            "BEST " + std::to_string(finalHiScore), smallFont));
         scene.Add(std::move(obj));
     }
 
     // Prompt
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(320.f, 350.f);
+        obj->SetLocalPosition(320.f, 360.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* renderPtr = render.get();
         obj->AddComponent(std::move(render));
         obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, renderPtr,
             "Press Enter or R to play again", smallFont));
+        scene.Add(std::move(obj));
+    }
+
+    // Mute toggle (no label on game-over screen key still works)
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->AddComponent(std::make_unique<MuteToggleComponent>(*obj));
         scene.Add(std::move(obj));
     }
 

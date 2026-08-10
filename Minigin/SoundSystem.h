@@ -12,6 +12,9 @@ namespace dae {
         virtual void PlayMusicAfter(const std::string& musicFile, const std::string& sfxFile, int sfxVolume, int loops = -1) = 0;
         virtual void StopMusic() = 0;
         virtual void SetMusicVolume(int volume) = 0;
+        // Global mute: when muted, music goes silent and new SFX are suppressed.
+        virtual void SetMuted(bool muted) = 0;
+        virtual bool IsMuted() const = 0;
         virtual void Update() = 0;
     };
 
@@ -24,6 +27,8 @@ namespace dae {
         void PlayMusicAfter(const std::string& musicFile, const std::string& sfxFile, int sfxVolume, int loops = -1) override;
         void StopMusic() override;
         void SetMusicVolume(int volume) override;
+        void SetMuted(bool muted) override;
+        bool IsMuted() const override;
         void Update() override;
     private:
         struct Impl;
@@ -37,6 +42,8 @@ namespace dae {
         void PlayMusicAfter(const std::string&, const std::string&, int, int) override {}
         void StopMusic() override {}
         void SetMusicVolume(int) override {}
+        void SetMuted(bool) override {}
+        bool IsMuted() const override { return false; }
         void Update() override {}
     };
 }

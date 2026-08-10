@@ -2,6 +2,7 @@
 #include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
 #include "ScoreManager.h"
+#include "ScorePopupManager.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "TimeSingleton.h"
@@ -176,14 +177,16 @@ void BurgerPieceComponent::OnLanded()
             if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
                 && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
             {
-                ScoreManager::GetInstance().AddScore(enemy->GetSquishScore());
+                int pts = enemy->GetSquishScore();
+                ScoreManager::GetInstance().AddScore(pts);
+                ScorePopupManager::GetInstance().Spawn(pts, enemy->GetPosX(), enemy->GetPosY());
                 m_subject.NotifyObservers(dae::Event("EnemySquished"), GetOwner());
-                enemy->Kill();
+                enemy->Squish(); // plays squish anim then dies
             }
         }
     }
 
-    // Check cup, kills any carried enemies and lands here regardless of extra floors
+    // Check cup, carried enemies recover and climb back up, then burger settles.
     if (m_cups)
     {
         for (const auto& cup : *m_cups)
@@ -193,9 +196,15 @@ void BurgerPieceComponent::OnLanded()
                 if (!m_caughtEnemies.empty())
                 {
                     static const int fallScores[] = { 500, 1000, 2000, 4000 };
-                    ScoreManager::GetInstance().AddScore(
-                        fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)]);
-                    for (auto* enemy : m_caughtEnemies) enemy->Kill();
+                    int pts = fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)];
+                    ScoreManager::GetInstance().AddScore(pts);
+                    // Spawn popup at the horizontal centre of caught enemies.
+                    float sumX = 0.f;
+                    for (auto* e : m_caughtEnemies) sumX += e->GetPosX();
+                    ScorePopupManager::GetInstance().Spawn(pts,
+                        sumX / static_cast<float>(m_caughtEnemies.size()), m_fallingY);
+                    // Enemies recover: brief stun at cup, then climb nearest ladder back up.
+                    for (auto* enemy : m_caughtEnemies) enemy->RecoverFromBurger(m_fallingY);
                     m_caughtEnemies.clear();
                 }
                 int stackCount = 0;
@@ -239,10 +248,15 @@ void BurgerPieceComponent::OnLanded()
     if (!m_caughtEnemies.empty())
     {
         static const int fallScores[] = { 500, 1000, 2000, 4000 };
-        ScoreManager::GetInstance().AddScore(
-            fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)]);
+        int pts = fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)];
+        ScoreManager::GetInstance().AddScore(pts);
+        float sumX = 0.f;
+        for (auto* e : m_caughtEnemies) sumX += e->GetPosX();
+        ScorePopupManager::GetInstance().Spawn(pts,
+            sumX / static_cast<float>(m_caughtEnemies.size()), m_fallingY);
         m_subject.NotifyObservers(dae::Event("EnemyFell"), GetOwner());
-        for (auto* e : m_caughtEnemies) e->Kill();
+        // Enemies recover at the landing platform, then walk normally.
+        for (auto* e : m_caughtEnemies) e->RecoverFromBurger(m_fallingY);
         m_caughtEnemies.clear();
     }
 
@@ -289,10 +303,13 @@ void BurgerPieceComponent::Update()
                 if (enemy->GetPosX() >= x0 && enemy->GetPosX() <= x0 + m_pieceW
                     && enemy->GetPosY() >= m_startFallingY
                     && enemy->GetPosY() <= m_fallingY + m_yTolerance
+                    && std::abs(enemy->GetPosY() - m_targetY) > m_yTolerance // not on landing platform
                     && !m_levelMap->FindPlatform(enemy->GetPosX(), enemy->GetPosY(), m_yTolerance * 2.f))
                 {
-                    ScoreManager::GetInstance().AddScore(enemy->GetSquishScore());
-                    enemy->Kill();
+                    int pts = enemy->GetSquishScore();
+                    ScoreManager::GetInstance().AddScore(pts);
+                    ScorePopupManager::GetInstance().Spawn(pts, enemy->GetPosX(), enemy->GetPosY());
+                    enemy->Squish(); // same squish anim whether on platform or ladder
                 }
             }
         }

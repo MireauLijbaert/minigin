@@ -27,19 +27,20 @@ PlatformMovementComponent::PlatformMovementComponent(dae::GameObject& owner,
 
 void PlatformMovementComponent::Kill()
 {
-    if (m_state == PlayerState::Dead) return;
-    m_state = PlayerState::Dead;
-    m_respawnTimer = RESPAWN_DELAY;
+    if (m_state != PlayerState::Alive) return;
+    m_state = PlayerState::Dying;
+    m_isMoving = false;
+    m_deathTimer = DEATH_ANIM_DURATION;
     if (m_health) m_health->LoseLife();
-    GetOwner()->SetLocalPosition(-2000.f, -2000.f);
     m_subject.NotifyObservers(dae::Event("PlayerDied"), GetOwner());
 
+    // Enemies wait until after death anim + respawn delay
     if (m_enemies)
     {
         float stagger = 0.f;
         for (auto* enemy : *m_enemies)
         {
-            enemy->Reset(RESPAWN_DELAY + stagger);
+            enemy->Reset(DEATH_ANIM_DURATION + RESPAWN_DELAY + stagger);
             stagger += 0.5f;
         }
     }
@@ -48,6 +49,19 @@ void PlatformMovementComponent::Kill()
 void PlatformMovementComponent::Update()
 {
     const float dt = dae::Time::GetInstance().GetDeltaTime();
+
+    if (m_state == PlayerState::Dying)
+    {
+        m_deathTimer -= dt;
+        if (m_deathTimer <= 0.f)
+        {
+            // Animation done — hide player and start respawn countdown
+            GetOwner()->SetLocalPosition(-2000.f, -2000.f);
+            m_state = PlayerState::Dead;
+            m_respawnTimer = RESPAWN_DELAY;
+        }
+        return;
+    }
 
     if (m_state == PlayerState::Dead)
     {
@@ -63,6 +77,15 @@ void PlatformMovementComponent::Update()
         return;
     }
 
+    // Pepper throw freeze: block movement input for the throw duration
+    if (m_freezeTimer > 0.f)
+    {
+        m_freezeTimer -= dt;
+        m_isMoving = false;
+        SyncPosition();
+        return;
+    }
+
     const auto* keys = SDL_GetKeyboardState(nullptr);
 
     const bool anyKey = keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_RIGHT]
@@ -70,10 +93,12 @@ void PlatformMovementComponent::Update()
 
     if (!anyKey)
     {
+        m_isMoving = false;
         m_stepTimer = STEP_INTERVAL;
         SyncPosition();
         return;
     }
+    m_isMoving = true;
 
     m_stepTimer += dt;
     if (m_stepTimer < STEP_INTERVAL)

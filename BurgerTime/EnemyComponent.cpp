@@ -59,7 +59,8 @@ void EnemyComponent::Stun()
 
 void EnemyComponent::CatchByBurger()
 {
-    if (m_state == State::Dead || m_state == State::FallingWithBurger) return;
+    if (m_state == State::Dead || m_state == State::Squished
+        || m_state == State::FallingWithBurger) return;
     m_state = State::FallingWithBurger;
 }
 
@@ -69,11 +70,31 @@ void EnemyComponent::SetFallingY(float y)
     SyncPosition();
 }
 
+void EnemyComponent::Squish()
+{
+    if (m_state == State::Dead || m_state == State::Squished) return;
+    m_state = State::Squished;
+    m_stateTimer = SQUISH_ANIM_DURATION;
+    m_intersectionCooldown = 0.f;
+    // Stay visible at current position so squish animation can play
+}
+
 void EnemyComponent::Kill()
 {
     if (m_state == State::Dead) return;
     m_state = State::Dead;
     m_stateTimer = RESPAWN_DELAY;
+    m_intersectionCooldown = 0.f;
+    GetOwner()->SetLocalPosition(-2000.f, -2000.f);
+}
+
+void EnemyComponent::RecoverFromBurger(float landingY)
+{
+    // Remember landing Y for the platform/cup check when the timer expires,
+    // but hide the enemy immediately (score flash, then reappear).
+    m_posY = landingY;
+    m_state = State::RecoveringFromBurger;
+    m_stateTimer = BURGER_RECOVERY_DELAY;
     m_intersectionCooldown = 0.f;
     GetOwner()->SetLocalPosition(-2000.f, -2000.f);
 }
@@ -155,6 +176,16 @@ void EnemyComponent::Update()
         }
         break;
 
+    case State::Squished:
+        m_stateTimer -= dt;
+        if (m_stateTimer <= 0.f)
+        {
+            m_state = State::Dead;
+            m_stateTimer = RESPAWN_DELAY;
+            GetOwner()->SetLocalPosition(-2000.f, -2000.f);
+        }
+        break;
+
     case State::Waiting:
         m_stateTimer -= dt;
         if (m_stateTimer <= 0.f && m_player->IsAlive())
@@ -165,6 +196,67 @@ void EnemyComponent::Update()
             if (plat) m_posY = plat->y;
         }
         break;
+
+    case State::RecoveringFromBurger:
+        m_stateTimer -= dt;
+        if (m_stateTimer <= 0.f)
+        {
+            const auto* plat = m_levelMap->FindPlatform(m_posX, m_posY, m_platSnap * 4.f);
+            if (plat)
+            {
+                // Landed on a normal platform just resume walking from here.
+                m_posY = plat->y;
+                m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+                m_state = State::Walking;
+                SyncPosition();
+            }
+            else
+            {
+                // In the cup or below all platforms, snap to nearest ladder X and climb up.
+                const auto& ladders = m_levelMap->GetLadders();
+                const dae::LadderCol* nearest = nullptr;
+                float bestDist = 1e9f;
+                for (const auto& l : ladders)
+                {
+                    float d = std::abs(l.x - m_posX);
+                    if (d < bestDist) { bestDist = d; nearest = &l; }
+                }
+                if (nearest)
+                {
+                    m_posX = nearest->x;
+                    m_state = State::ClimbingFromCup;
+                    SyncPosition();
+                }
+                else
+                {
+                    // No ladders found (shouldn't happen), fall back to spawn.
+                    m_posX = m_spawnPos.x;
+                    m_posY = m_spawnPos.y;
+                    m_state = State::Entering;
+                    SyncPosition();
+                }
+            }
+        }
+        break;
+
+    case State::ClimbingFromCup:
+    {
+        // Move straight up until we reach any platform, then switch to Walking.
+        float nextY = m_posY - m_speed * dt;
+        const auto* plat = m_levelMap->FindPlatform(m_posX, nextY, m_platSnap * 2.f);
+        if (plat)
+        {
+            m_posY = plat->y;
+            m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+            m_state = State::Walking;
+        }
+        else
+        {
+            m_posY = nextY;
+        }
+        SyncPosition();
+        break;
+    }
     }
 }
 

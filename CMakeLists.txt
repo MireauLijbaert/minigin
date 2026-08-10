@@ -222,6 +222,11 @@ if(EMSCRIPTEN)
     "BurgerTime/BonusItemComponent.h"
     "BurgerTime/BtSounds.h"
     "BurgerTime/SoundObserver.h"
+    "BurgerTime/AnimatedSpriteComponent.h"
+    "BurgerTime/AnimatedSpriteComponent.cpp"
+    "BurgerTime/CharacterAnimators.h"
+    "BurgerTime/ScorePopupManager.h"
+    "BurgerTime/ScorePopupManager.cpp"
   )
 else()
   set(TARGET_NAME minigin_game)
@@ -252,6 +257,11 @@ else()
     "BurgerTime/BonusItemComponent.h"
     "BurgerTime/BtSounds.h"
     "BurgerTime/SoundObserver.h"
+    "BurgerTime/AnimatedSpriteComponent.h"
+    "BurgerTime/AnimatedSpriteComponent.cpp"
+    "BurgerTime/CharacterAnimators.h"
+    "BurgerTime/ScorePopupManager.h"
+    "BurgerTime/ScorePopupManager.cpp"
   )
 endif()
 
