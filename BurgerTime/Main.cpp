@@ -112,7 +112,28 @@ static void LoadLevel(int levelNum)
     const float charW = CHAR_SPRITE_W * scaleX;
     const float charH = CHAR_SPRITE_H * scaleY;
 
-    levelData = LevelLoader::Load("Data/bt_level" + std::to_string(levelNum) + ".txt", transform);
+    // Levels 7+ use the same map layouts as 1–6 (cycling) but with fixed enemy composition
+    const int fileLevel = ((levelNum - 1) % MAX_LEVEL) + 1;
+    levelData = LevelLoader::Load("Data/bt_level" + std::to_string(fileLevel) + ".txt", transform);
+
+    // From level 7 onwards enemies are always: K E H K E H (same as level 6)
+    if (levelNum > MAX_LEVEL)
+    {
+        static const int   fixedTypes[]  = { 2, 1, 0, 2, 1, 0 }; // K E H K E H
+        static const float fixedDelays[] = { 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f };
+        int spawnCount = static_cast<int>(levelData.spawnPoints.size());
+        levelData.enemies.clear();
+        for (int i = 0; i < 6 && spawnCount > 0; ++i)
+        {
+            const auto& sp = levelData.spawnPoints[i % spawnCount];
+            EnemySpawnDef def{};
+            def.type   = fixedTypes[i];
+            def.spawnX = sp.x;
+            def.spawnY = sp.y;
+            def.delay  = fixedDelays[i];
+            levelData.enemies.push_back(def);
+        }
+    }
 
     // Configure popup scale to match character size in screen coords.
     ScorePopupManager::GetInstance().SetDisplaySize(charW, charH);
@@ -129,7 +150,7 @@ static void LoadLevel(int levelNum)
         auto bgObj = std::make_unique<dae::GameObject>();
         bgObj->SetLocalPosition(LEVEL_OFFSET_X, LEVEL_OFFSET_Y);
         auto bgRender = std::make_unique<dae::RenderComponent>(*bgObj);
-        bgRender->SetTexture("bt_level" + std::to_string(levelNum) + ".png");
+        bgRender->SetTexture("bt_level" + std::to_string(fileLevel) + ".png");
         bgRender->SetSize(LEVEL_DST_W, LEVEL_DST_H);
         bgObj->AddComponent(std::move(bgRender));
         scene.Add(std::move(bgObj));
@@ -275,7 +296,7 @@ static void LoadLevel(int levelNum)
         };
         auto bonusObj = std::make_unique<dae::GameObject>();
         // Cycle through 3 bonus sprites: level 1→ice cream, 2→coffee, 3→fries, loops
-        const std::string bonusTex = "bt_bonus_" + std::to_string((levelNum - 1) % 3 + 1) + ".png";
+        const std::string bonusTex = "bt_bonus_" + std::to_string((fileLevel - 1) % 3 + 1) + ".png";
         auto bonusComp = std::make_unique<BonusItemComponent>(
             *bonusObj, bonusPos, charW, playerMovePtr, pepperPtr,
             /*score*/   500,
@@ -298,7 +319,7 @@ static void LoadLevel(int levelNum)
             [playerHealthPtr]()
             {
                 s_currentLives = playerHealthPtr->GetLives();
-                int next = (s_currentLevel % MAX_LEVEL) + 1;
+                int next = s_currentLevel + 1;
                 dae::SceneManager::GetInstance().RequestLoad([next]()
                 {
                     dae::SceneManager::GetInstance().ClearAll();
