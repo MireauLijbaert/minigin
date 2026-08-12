@@ -7,26 +7,30 @@
 #include "ScoreManager.h"
 #include "TimeSingleton.h"
 #include "Renderer.h"
+#include "ResourceManager.h"
+#include "Texture2D.h"
 #include "GameObject.h"
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
+#include <memory>
+#include <string>
 
 // Bonus item that spawns periodically in the center of the level.
 // Gives score + 1 pepper charge on pickup.
-// Placeholder: renders as a gold rectangle. Swap in a sprite later.
 class BonusItemComponent : public dae::BaseComponent
 {
 public:
     dae::Subject& GetSubject() { return m_subject; }
     BonusItemComponent(dae::GameObject& owner,
-                       glm::vec2 worldPos,   // center of the item (world coords)
-                       float size,            // width = height (match charW)
+                       glm::vec2 worldPos,        // center of the item (world coords)
+                       float size,                 // width = height (match charW)
                        PlatformMovementComponent* player,
                        PepperComponent* pepper,
                        int score             = 500,
-                       float firstAppear     = 10.f,  // delay before first spawn
-                       float activeTime      = 10.f,  // how long item stays visible
-                       float respawnTime     = 25.f)  // cooldown after pickup/timeout
+                       float firstAppear     = 10.f,
+                       float activeTime      = 10.f,
+                       float respawnTime     = 25.f,
+                       const std::string& textureName = "")
         : BaseComponent(owner)
         , m_pos{ worldPos }
         , m_halfSize{ size * 0.5f }
@@ -37,7 +41,10 @@ public:
         , m_respawnTime{ respawnTime }
         , m_timer{ firstAppear }
         , m_active{ false }
-    {}
+    {
+        if (!textureName.empty())
+            m_tex = dae::ResourceManager::GetInstance().LoadTexture(textureName);
+    }
 
     void Update() override
     {
@@ -88,15 +95,23 @@ public:
             m_halfSize * 2.f,
             m_halfSize * 2.f
         };
-        // Gold fill
-        SDL_SetRenderDrawColor(r, 255, 215, 0, 255);
-        SDL_RenderFillRect(r, &rect);
-        // Orange border
-        SDL_SetRenderDrawColor(r, 200, 100, 0, 255);
-        SDL_RenderRect(r, &rect);
+
+        if (m_tex)
+        {
+            SDL_RenderTexture(r, m_tex->GetSDLTexture(), nullptr, &rect);
+        }
+        else
+        {
+            // Fallback: gold rectangle
+            SDL_SetRenderDrawColor(r, 255, 215, 0, 255);
+            SDL_RenderFillRect(r, &rect);
+            SDL_SetRenderDrawColor(r, 200, 100, 0, 255);
+            SDL_RenderRect(r, &rect);
+        }
     }
 
 private:
+    std::shared_ptr<dae::Texture2D> m_tex;
     glm::vec2 m_pos;
     float     m_halfSize;
     PlatformMovementComponent* m_player;

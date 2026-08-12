@@ -25,16 +25,26 @@ struct BurgerPieceDef
 
 struct CupDef
 {
-    int row; // platform row the cup sits just below
-    int col; // ladder column the cup is centered on
+    int   row;    // platform row the cup sits just below
+    int   col;    // ladder column the cup is centered on
+    float worldY; // world-space Y where landed burgers stack (computed at load time)
+};
+
+struct EnemySpawnDef
+{
+    int   type;   // 0=Hotdog, 1=Egg, 2=Pickle  (int to avoid circular include with EnemyComponent.h)
+    float spawnX; // sprite-space X  (<0 = off left, >208 = off right)
+    float spawnY; // sprite-space Y  (platform row pixel height)
+    float delay;  // seconds before the enemy starts moving
 };
 
 struct LevelData
 {
     std::unique_ptr<dae::LevelMap> map;
-    glm::vec2 playerStart{};  // world coords (feet center)
-    std::vector<BurgerPieceDef> burgers;
-    std::vector<CupDef> cups;
+    glm::vec2 playerStart{};
+    std::vector<BurgerPieceDef>  burgers;
+    std::vector<CupDef>          cups;
+    std::vector<EnemySpawnDef>   enemies;
 };
 
 class LevelLoader

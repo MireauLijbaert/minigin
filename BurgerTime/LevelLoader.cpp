@@ -1,5 +1,6 @@
 #include "LevelLoader.h"
 #include <fstream>
+#include <sstream>
 #include <cassert>
 
 LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& transform)
@@ -10,13 +11,17 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
     LevelData data;
     data.map = std::make_unique<dae::LevelMap>();
 
-    // Collect all non-comment lines in order (blank lines are kept they represent empty rows)
-    std::vector<std::string> lines;
+    // Separate grid lines from [ENEMIES] section
+    std::vector<std::string> lines;       // grid lines (platforms + ladders)
+    std::vector<std::string> enemyLines;  // lines after [ENEMIES] tag
+    bool inEnemies = false;
     std::string line;
     while (std::getline(file, line))
     {
         if (!line.empty() && line[0] == '#') continue;
-        lines.push_back(line);
+        if (line == "[ENEMIES]") { inEnemies = true; continue; }
+        if (inEnemies) enemyLines.push_back(line);
+        else           lines.push_back(line);
     }
 
     // Even-indexed lines (0,2,4,...22): platform rows (12 total)
@@ -74,7 +79,14 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
             }
 
             if (c == 'C')
-                data.cups.push_back({ row, col });
+            {
+                CupDef cup{};
+                cup.row    = row;
+                cup.col    = col;
+                cup.worldY = transform.WorldY(
+                    static_cast<float>(GridPlatformY(row)) + 9.f);
+                data.cups.push_back(cup);
+            }
         }
     }
 
@@ -112,6 +124,25 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
             float y1 = transform.WorldY(static_cast<float>(lastYBotSprite));
             data.map->AddLadder(col, x, y0, y1);
         }
+    }
+
+    // --- Enemies ---
+    for (const auto& l : enemyLines)
+    {
+        if (l.empty()) continue;
+        std::istringstream ss(l);
+        std::string typeName;
+        float x{}, y{}, delay{};
+        ss >> typeName >> x >> y >> delay;
+        EnemySpawnDef def{};
+        if      (typeName == "HOTDOG") def.type = 0;
+        else if (typeName == "EGG")    def.type = 1;
+        else if (typeName == "PICKLE") def.type = 2;
+        else continue;   // unknown type skip
+        def.spawnX = x;
+        def.spawnY = y;
+        def.delay  = delay;
+        data.enemies.push_back(def);
     }
 
     return data;

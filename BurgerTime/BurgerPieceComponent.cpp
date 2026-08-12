@@ -30,7 +30,6 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
     , m_yTolerance{ 2.f * transform.scaleY }
     , m_maxDrop{ 3.f * transform.scaleY }
     , m_fallSpeed{ 40.f * transform.scaleY }
-    , m_cupBottomY{ transform.WorldY(186.f) }
     , m_player{ player }
     , m_allPieces{ allPieces }
     , m_cups{ cups }
@@ -94,8 +93,9 @@ void BurgerPieceComponent::StartFalling()
     // Find nearest platform below in world coords
     const dae::PlatformRow* plat = m_levelMap->FindNextPlatformBelow(m_worldCenterX, m_fallingY);
 
-    // Find nearest cup below at this column
-    int cupRow = -1;
+    // Find nearest cup below at this column (and capture its actual world Y)
+    int   cupRow    = -1;
+    float cupWorldY = 0.f;
     if (m_cups)
     {
         for (const auto& cup : *m_cups)
@@ -103,7 +103,10 @@ void BurgerPieceComponent::StartFalling()
             if (cup.col == m_startCol && cup.row > m_currentRow)
             {
                 if (cupRow < 0 || cup.row < cupRow)
-                    cupRow = cup.row;
+                {
+                    cupRow    = cup.row;
+                    cupWorldY = cup.worldY;
+                }
             }
         }
     }
@@ -115,7 +118,7 @@ void BurgerPieceComponent::StartFalling()
     if (hitCupFirst)
     {
         m_targetRow = cupRow;
-        m_targetY = m_cupBottomY;
+        m_targetY   = cupWorldY;   // land at this cup's actual world position
     }
     else
     {
@@ -198,21 +201,21 @@ void BurgerPieceComponent::OnLanded()
                     static const int fallScores[] = { 500, 1000, 2000, 4000 };
                     int pts = fallScores[std::min((int)m_caughtEnemies.size() - 1, 3)];
                     ScoreManager::GetInstance().AddScore(pts);
-                    // Spawn popup at the horizontal centre of caught enemies.
                     float sumX = 0.f;
                     for (auto* e : m_caughtEnemies) sumX += e->GetPosX();
                     ScorePopupManager::GetInstance().Spawn(pts,
                         sumX / static_cast<float>(m_caughtEnemies.size()), m_fallingY);
-                    // Enemies recover: brief stun at cup, then climb nearest ladder back up.
                     for (auto* enemy : m_caughtEnemies) enemy->RecoverFromBurger(m_fallingY);
                     m_caughtEnemies.clear();
                 }
                 int stackCount = 0;
                 for (auto* other : *m_allPieces)
                     if (other != this && other->m_state == State::Dead
-                        && other->m_startCol == m_startCol)
+                        && other->m_startCol == m_startCol
+                        && other->m_currentRow == cup.row)
                         ++stackCount;
-                m_fallingY = m_cupBottomY - static_cast<float>(stackCount) * m_pieceH;
+                // Stack at the cup's own world Y, not a hardcoded screen bottom
+                m_fallingY = cup.worldY - static_cast<float>(stackCount) * m_pieceH;
                 m_extraFloors = 0;
                 m_state = State::Dead;
                 return;

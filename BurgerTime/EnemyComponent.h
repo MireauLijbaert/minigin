@@ -73,6 +73,10 @@ public:
     // delay: how long to freeze before walking (should match player respawn delay)
     void Reset(float delay = 0.f);
 
+    // Level-clear freeze: stops all movement; animator will pause the sprite
+    void Freeze() { m_levelClearFrozen = true; }
+    bool IsLevelClearFrozen() const { return m_levelClearFrozen; }
+
 private:
     enum class State { Entering, Walking, Stunned, FallingWithBurger, Dead, Waiting,
                        Squished,             // plays squish animation then dies
@@ -105,6 +109,7 @@ private:
     static constexpr float BURGER_RECOVERY_DELAY  = 1.5f;
     static constexpr float SQUISH_ANIM_DURATION   = 0.8f; // 4 frames @ ~5fps
 
+    bool m_levelClearFrozen{ false };
     dae::Subject m_subject;
     void UpdateWalking(float dt);
     void SyncPosition();

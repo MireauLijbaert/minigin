@@ -47,7 +47,18 @@ public:
     {
         m_score = 0;
         NotifyScoreChanged();
-        // hi-score intentionally survives Reset() — persists across games
+        // hi-score intentionally survives Reset() persists across games
+    }
+
+    // Called once at startup: ensures the in-memory hi-score is at least
+    // as high as the top entry loaded from disk.
+    void SetHiScoreFloor(int floor)
+    {
+        if (floor > m_hiScore)
+        {
+            m_hiScore = floor;
+            NotifyHiScoreChanged();
+        }
     }
 
     dae::Subject& GetSubject()        { return m_subject; }

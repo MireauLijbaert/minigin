@@ -123,6 +123,8 @@ void EnemyComponent::Reset(float delay)
 
 void EnemyComponent::Update()
 {
+    if (m_levelClearFrozen) return;
+
     float dt = dae::Time::GetInstance().GetDeltaTime();
 
     switch (m_state)

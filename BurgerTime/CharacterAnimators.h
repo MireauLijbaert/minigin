@@ -25,6 +25,13 @@ public:
         if (m_enemy->IsDeadAnim())
             return;
 
+        // Level-clear freeze: stop animation in place
+        if (m_enemy->IsLevelClearFrozen())
+        {
+            m_anim->Pause();
+            return;
+        }
+
         // Carried by falling burger, freeze on last frame
         if (m_enemy->IsFallingWithBurger())
         {
@@ -96,11 +103,22 @@ public:
         m_pepperDir   = m_player->GetFacingDir();
     }
 
+    // Called when round is cleared, locks the celebrate clip until next level
+    void SetCelebrating(bool on) { m_celebrating = on; }
+
     void Update() override
     {
         if (!m_player || !m_anim) return;
 
         const float dt = dae::Time::GetInstance().GetDeltaTime();
+
+        // ── Round-clear celebration ──────────────────────────────────────
+        if (m_celebrating)
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("celebrate");
+            return;
+        }
 
         // ── Death animation ──────────────────────────────────────────────
         if (m_player->IsDying())
@@ -172,6 +190,7 @@ private:
     glm::vec2 m_lastDir{ 0.f, -1.f };   // last movement direction, for idle pose selection
     float     m_pepperTimer{ 0.f };
     glm::vec2 m_pepperDir{ 0.f, -1.f }; // facing dir captured at throw moment
+    bool      m_celebrating{ false };
 
     static constexpr float PEPPER_ANIM_DURATION = 0.5f;
 };

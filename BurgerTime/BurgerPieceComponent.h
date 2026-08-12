@@ -43,7 +43,6 @@ private:
     float m_yTolerance;
     float m_maxDrop;
     float m_fallSpeed;
-    float m_cupBottomY;
     PlatformMovementComponent* m_player;
     std::vector<BurgerPieceComponent*>* m_allPieces;
     const std::vector<CupDef>* m_cups;
