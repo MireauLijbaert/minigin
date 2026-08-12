@@ -60,23 +60,24 @@ float BurgerPieceComponent::GetLeftEdgeX() const
 
 void BurgerPieceComponent::CheckPlayerPress()
 {
-    float px = m_player->GetPosX();
-    float py = m_player->GetPosY();
-
-    if (std::abs(py - m_fallingY) > m_yTolerance)
-        return;
-
     float leftEdge = GetLeftEdgeX();
-    for (int i = 0; i < 4; ++i)
+    for (auto* player : { m_player, m_player2 })
     {
-        if (m_pressed[i]) continue;
-        float segX0 = leftEdge + static_cast<float>(i) * m_segW;
-        float segX1 = segX0 + m_segW;
-        if (px >= segX0 && px < segX1)
+        if (!player || !player->IsAlive()) continue;
+        float px = player->GetPosX();
+        float py = player->GetPosY();
+        if (std::abs(py - m_fallingY) > m_yTolerance) continue;
+        for (int i = 0; i < 4; ++i)
         {
-            m_pressed[i] = true;
-            m_segmentDrop[i] = m_maxDrop;
-            m_subject.NotifyObservers(dae::Event("BurgerSegmentPressed"), GetOwner());
+            if (m_pressed[i]) continue;
+            float segX0 = leftEdge + static_cast<float>(i) * m_segW;
+            float segX1 = segX0 + m_segW;
+            if (px >= segX0 && px < segX1)
+            {
+                m_pressed[i] = true;
+                m_segmentDrop[i] = m_maxDrop;
+                m_subject.NotifyObservers(dae::Event("BurgerSegmentPressed"), GetOwner());
+            }
         }
     }
 }

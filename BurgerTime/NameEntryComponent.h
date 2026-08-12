@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseComponent.h"
 #include "Font.h"
+#include "InputManager.h"
 #include "Renderer.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -40,22 +41,24 @@ public:
     {
         if (m_done) return;
         const auto* keys = SDL_GetKeyboardState(nullptr);
+        auto& input = dae::InputManager::GetInstance();
 
-        auto edge = [&](SDL_Scancode sc, bool& prev) -> bool
+        auto edge = [&](bool down, bool& prev) -> bool
         {
-            bool down = keys[sc] != 0;
-            bool hit  = down && !prev;
+            bool hit = down && !prev;
             prev = down;
             return hit;
         };
 
-        if (edge(SDL_SCANCODE_LEFT,  m_prevL)) MoveLeft();
-        if (edge(SDL_SCANCODE_RIGHT, m_prevR)) MoveRight();
-        if (edge(SDL_SCANCODE_UP,    m_prevU)) MoveUp();
-        if (edge(SDL_SCANCODE_DOWN,  m_prevD)) MoveDown();
+        if (edge(keys[SDL_SCANCODE_LEFT]  || input.IsGamepadButtonHeld(dae::GamepadButton::DPadLeft,  0), m_prevL)) MoveLeft();
+        if (edge(keys[SDL_SCANCODE_RIGHT] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadRight, 0), m_prevR)) MoveRight();
+        if (edge(keys[SDL_SCANCODE_UP]    || input.IsGamepadButtonHeld(dae::GamepadButton::DPadUp,    0), m_prevU)) MoveUp();
+        if (edge(keys[SDL_SCANCODE_DOWN]  || input.IsGamepadButtonHeld(dae::GamepadButton::DPadDown,  0), m_prevD)) MoveDown();
 
-        // Select: Enter or Space
-        bool selectDown = keys[SDL_SCANCODE_RETURN] != 0 || keys[SDL_SCANCODE_SPACE] != 0;
+        // Select: Enter, Space, or gamepad A
+        bool selectDown = keys[SDL_SCANCODE_RETURN] != 0
+                       || keys[SDL_SCANCODE_SPACE]  != 0
+                       || input.IsGamepadButtonHeld(dae::GamepadButton::A, 0);
         if (selectDown && !m_prevSel) SelectCurrent();
         m_prevSel = selectDown;
     }

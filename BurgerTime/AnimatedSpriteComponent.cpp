@@ -101,8 +101,10 @@ void AnimatedSpriteComponent::Render()
 
     SDL_Renderer* renderer = dae::Renderer::GetInstance().GetSDLRenderer();
 
+    SDL_SetTextureColorMod(tex, m_r, m_g, m_b);
     if (m_flipH)
         SDL_RenderTextureRotated(renderer, tex, &src, &dst, 0.0, nullptr, SDL_FLIP_HORIZONTAL);
     else
         SDL_RenderTexture(renderer, tex, &src, &dst);
+    SDL_SetTextureColorMod(tex, 255, 255, 255); // restore
 }

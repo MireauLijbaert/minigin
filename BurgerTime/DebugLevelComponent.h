@@ -22,7 +22,7 @@ public:
     void Update() override
     {
         const auto* keys = SDL_GetKeyboardState(nullptr);
-        bool pressed = keys[SDL_SCANCODE_F1] != 0;
+        bool pressed = keys[SDL_SCANCODE_F3] != 0;
         if (pressed && !m_prevKey)
             m_visible = !m_visible;
         m_prevKey = pressed;

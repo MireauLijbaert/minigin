@@ -29,7 +29,7 @@ EnemyComponent::EnemyComponent(dae::GameObject& owner,
     , m_interThresh{ 0.5f * transform.scaleX }
     , m_hitRadiusSq{ (charWorldW * 0.8f) * (charWorldW * 0.8f) }
 {
-    float px = m_player->GetPosX();
+    float px = GetTarget()->GetPosX();
     m_MovementDirection = { (px >= m_posX) ? 1.f : -1.f, 0.f };
 
     const auto* plat = m_levelMap->FindPlatform(m_posX, m_posY, m_platSnap * 2.f);
@@ -143,13 +143,16 @@ void EnemyComponent::Update()
     }
 
     case State::Walking:
-        // Check collision with player first
-        if (m_player->IsAlive())
+        // Check collision with all alive players
+        for (auto* target : { m_player, m_player2 })
         {
-            float dx = m_posX - m_player->GetPosX();
-            float dy = m_posY - m_player->GetPosY();
-            if (dx * dx + dy * dy < m_hitRadiusSq)
-                m_player->Kill();
+            if (target && target->IsAlive())
+            {
+                float dx = m_posX - target->GetPosX();
+                float dy = m_posY - target->GetPosY();
+                if (dx * dx + dy * dy < m_hitRadiusSq)
+                    target->Kill();
+            }
         }
         UpdateWalking(dt);
         break;
@@ -179,7 +182,7 @@ void EnemyComponent::Update()
                 m_posX = m_spawnPos.x;
                 m_posY = m_spawnPos.y;
             }
-            m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+            m_MovementDirection = { (GetTarget()->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
             const auto* plat = m_levelMap->FindPlatform(m_posX, m_posY, m_platSnap * 2.f);
             m_state = plat ? State::Walking : State::Entering;
             if (plat) m_posY = plat->y;
@@ -199,9 +202,9 @@ void EnemyComponent::Update()
 
     case State::Waiting:
         m_stateTimer -= dt;
-        if (m_stateTimer <= 0.f && m_player->IsAlive())
+        if (m_stateTimer <= 0.f && GetTarget()->IsAlive())
         {
-            m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+            m_MovementDirection = { (GetTarget()->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
             const auto* plat = m_levelMap->FindPlatform(m_posX, m_posY, m_platSnap * 2.f);
             m_state = plat ? State::Walking : State::Entering;
             if (plat) m_posY = plat->y;
@@ -217,7 +220,7 @@ void EnemyComponent::Update()
             {
                 // Landed on a normal platform just resume walking from here.
                 m_posY = plat->y;
-                m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+                m_MovementDirection = { (GetTarget()->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
                 m_state = State::Walking;
                 SyncPosition();
             }
@@ -258,7 +261,7 @@ void EnemyComponent::Update()
         if (plat)
         {
             m_posY = plat->y;
-            m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
+            m_MovementDirection = { (GetTarget()->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
             m_state = State::Walking;
         }
         else
@@ -271,12 +274,23 @@ void EnemyComponent::Update()
     }
 }
 
+PlatformMovementComponent* EnemyComponent::GetTarget() const
+{
+    if (!m_player2 || !m_player2->IsAlive()) return m_player;
+    if (!m_player->IsAlive()) return m_player2;
+    // Both alive pick the nearest one
+    float d1 = std::abs(m_player->GetPosX()  - m_posX) + std::abs(m_player->GetPosY()  - m_posY);
+    float d2 = std::abs(m_player2->GetPosX() - m_posX) + std::abs(m_player2->GetPosY() - m_posY);
+    return d1 <= d2 ? m_player : m_player2;
+}
+
 void EnemyComponent::UpdateWalking(float dt)
 {
     if (m_intersectionCooldown > 0.f) m_intersectionCooldown -= dt;
 
-    float px = m_player->GetPosX();
-    float py = m_player->GetPosY();
+    auto* tgt = GetTarget();
+    float px = tgt->GetPosX();
+    float py = tgt->GetPosY();
 
     float nextX = m_posX + m_MovementDirection.x * m_speed * dt;
     float nextY = m_posY - m_MovementDirection.y * m_speed * dt;

@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "InputManager.h"
 #include <functional>
 #include <SDL3/SDL.h>
 
@@ -16,7 +17,8 @@ public:
     void Update() override
     {
         const auto* keys = SDL_GetKeyboardState(nullptr);
-        bool pressed = keys[SDL_SCANCODE_RETURN] != 0 || keys[SDL_SCANCODE_R] != 0;
+        bool pressed = keys[SDL_SCANCODE_RETURN] != 0 || keys[SDL_SCANCODE_R] != 0
+            || dae::InputManager::GetInstance().IsGamepadButtonHeld(dae::GamepadButton::Start, 0);
         if (pressed && !m_prevKey)
         {
             m_prevKey = true;

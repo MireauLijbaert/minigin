@@ -10,6 +10,9 @@
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
+#include <SDL3/SDL.h>
+
+class VersusEnemyPlayerComponent;
 
 // Pepper attack: press X to stun nearby enemies in the direction you are facing.
 // Alternatives considered:
@@ -40,12 +43,21 @@ public:
 
     // Called by PlayerAnimatorComponent setup to animate the throw pose
     void SetPepperFiredCallback(std::function<void()> cb) { m_pepperFiredCallback = std::move(cb); }
+    void SetFireKey(SDL_Scancode key) { m_fireKey = key; }
+    // Enable gamepad Y-button pepper for this player
+    void SetGamepad(bool use, uint32_t index = 0) { m_useGamepad = use; m_gamepadIndex = index; }
+    // Versus mode: also stun the player-controlled enemy when pepper lands on them
+    void SetVersusTarget(VersusEnemyPlayerComponent* vep) { m_versusTarget = vep; }
 
 private:
     PlatformMovementComponent* m_player;
     std::vector<EnemyComponent*>* m_enemies;
     float m_charW, m_charH;
     int m_charges;
+    SDL_Scancode m_fireKey{ SDL_SCANCODE_SPACE };
+    bool     m_useGamepad{ false };
+    uint32_t m_gamepadIndex{ 0 };
+    VersusEnemyPlayerComponent* m_versusTarget{ nullptr };
 
     std::function<void()> m_pepperFiredCallback;
     bool m_active{ false };

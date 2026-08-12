@@ -194,3 +194,55 @@ private:
 
     static constexpr float PEPPER_ANIM_DURATION = 0.5f;
 };
+
+// ---------------------------------------------------------------------------
+// VersusEnemyAnimatorComponent
+// Drives enemy-style clips (walk_h / walk_u / walk_d / idle) from a
+// PlatformMovementComponent.  Used for the player-controlled hot dog in
+// Versus mode.  Clips follow the same naming / flip convention as enemies.
+// ---------------------------------------------------------------------------
+class VersusEnemyAnimatorComponent : public dae::BaseComponent
+{
+public:
+    VersusEnemyAnimatorComponent(dae::GameObject& owner,
+                                 PlatformMovementComponent* player,
+                                 AnimatedSpriteComponent*   anim)
+        : BaseComponent(owner), m_player{ player }, m_anim{ anim }
+    {}
+
+    void Update() override
+    {
+        if (!m_player || !m_anim) return;
+        if (!m_player->IsAlive()) return;
+
+        if (!m_player->IsMoving())
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("idle");
+            return;
+        }
+
+        glm::vec2 dir = m_player->GetFacingDir();
+        if (dir.x != 0.f)
+        {
+            m_anim->SetFlipH(dir.x > 0.f); // base sprite faces LEFT
+            m_anim->Play("walk_h");
+        }
+        else if (dir.y > 0.f)
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("walk_u");
+        }
+        else
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("walk_d");
+        }
+    }
+
+    void Render() override {}
+
+private:
+    PlatformMovementComponent* m_player;
+    AnimatedSpriteComponent*   m_anim;
+};

@@ -14,6 +14,8 @@
 #include "ScorePopupManager.h"
 #include "ServiceLocator.h"
 #include "SoundSystem.h"
+#include "InputManager.h"
+#include "Command.h"
 #include <SDL3/SDL.h>
 #include <memory>
 #include <string>
@@ -285,33 +287,31 @@ public:
 };
 
 // ---- MuteToggleComponent ----------------------------------------------------
-// Polls the M key; on press, flips global mute and updates an optional label.
+// F2 flips global mute (event-based via InputManager, no polling, no hold-repeat).
 
 class MuteToggleComponent : public dae::BaseComponent
 {
 public:
     MuteToggleComponent(dae::GameObject& owner, dae::TextComponent* label = nullptr)
-        : BaseComponent(owner), m_label{ label } {}
-
-    void Update() override
+        : BaseComponent(owner), m_label{ label }
     {
-        const auto* keys = SDL_GetKeyboardState(nullptr);
-        const bool  down = keys[SDL_SCANCODE_M] != 0;
-
-        if (down && !m_prevDown)
-        {
-            auto& ss = dae::ServiceLocator::GetSoundSystem();
-            const bool nowMuted = !ss.IsMuted();
-            ss.SetMuted(nowMuted);
-            if (m_label)
-                m_label->SetText(nowMuted ? "[M] MUTED" : "[M] SOUND");
-        }
-        m_prevDown = down;
+        dae::InputManager::GetInstance().BindKeyboardInput(
+            SDL_SCANCODE_F2,
+            std::make_unique<dae::LambdaCommand>([this]()
+            {
+                auto& ss = dae::ServiceLocator::GetSoundSystem();
+                const bool nowMuted = !ss.IsMuted();
+                ss.SetMuted(nowMuted);
+                if (m_label)
+                    m_label->SetText(nowMuted ? "[F2] MUTED" : "[F2] SOUND");
+            }),
+            dae::InputState::Down
+        );
     }
 
+    void Update() override {}
     void Render() override {}
 
 private:
     dae::TextComponent* m_label;
-    bool m_prevDown{ false };
 };

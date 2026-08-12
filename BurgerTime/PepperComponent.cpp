@@ -1,4 +1,6 @@
 #include "PepperComponent.h"
+#include "VersusEnemyPlayerComponent.h"
+#include "InputManager.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "TimeSingleton.h"
@@ -54,7 +56,9 @@ void PepperComponent::Update()
     if (!m_player->IsAlive() || m_charges <= 0) return;
 
     const auto* keys = SDL_GetKeyboardState(nullptr);
-    const bool keyDown = keys[SDL_SCANCODE_X] != 0;
+    const bool gpFire  = m_useGamepad &&
+        dae::InputManager::GetInstance().IsGamepadButtonHeld(dae::GamepadButton::Y, m_gamepadIndex);
+    const bool keyDown = keys[m_fireKey] != 0 || gpFire;
 
     // Fire on key down edge (not held)
     if (keyDown && !m_prevKeyDown)
@@ -101,6 +105,18 @@ void PepperComponent::Update()
                 {
                     enemy->Stun();
                 }
+            }
+        }
+
+        // Versus mode: also stun the player-controlled enemy
+        if (m_versusTarget && !m_versusTarget->IsStunned())
+        {
+            float vx = m_versusTarget->GetPosX();
+            float vy = m_versusTarget->GetPosY();
+            if (vx >= m_pepperX && vx <= m_pepperX + m_pepperW
+                && vy >= m_pepperY && vy <= m_pepperY + m_pepperH)
+            {
+                m_versusTarget->Stun(3.f);
             }
         }
 

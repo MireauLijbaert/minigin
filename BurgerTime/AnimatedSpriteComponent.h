@@ -35,6 +35,9 @@ public:
     // Flip the rendered sprite horizontally (for left-facing variants).
     void SetFlipH(bool flip) { m_flipH = flip; }
 
+    // Optional RGB color modulation (255,255,255 = no tint).
+    void SetColorMod(uint8_t r, uint8_t g, uint8_t b) { m_r = r; m_g = g; m_b = b; }
+
     // True when the current clip is non-looping and has reached its last frame.
     bool IsClipFinished() const;
 
@@ -47,6 +50,7 @@ private:
     int   m_frameIndex{ 0 };
     float m_frameTimer{ 0.f };
     float m_renderW, m_renderH;
-    bool  m_flipH{ false };
-    bool  m_paused{ false };
+    bool    m_flipH{ false };
+    bool    m_paused{ false };
+    uint8_t m_r{ 255 }, m_g{ 255 }, m_b{ 255 };
 };

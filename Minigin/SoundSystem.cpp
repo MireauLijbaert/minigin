@@ -229,6 +229,13 @@ namespace dae {
             // Don't play anything while muted.
             if (m_muted) return;
 
+            // Stop currently playing BGM so it doesn't overlap the jingle.
+            if (musicTrack) {
+                MIX_StopTrack(musicTrack, 0);
+                MIX_DestroyTrack(musicTrack);
+                musicTrack = nullptr;
+            }
+
             // Cancel any previous pending music-after-sfx
             if (pendingSfxTrack) {
                 MIX_DestroyTrack(pendingSfxTrack);

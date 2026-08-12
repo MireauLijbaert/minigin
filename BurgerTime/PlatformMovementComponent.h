@@ -6,8 +6,18 @@
 #include "HealthComponent.h"
 #include <glm/glm.hpp>
 #include <vector>
+#include <SDL3/SDL.h>
 
 class EnemyComponent;
+
+// Configurable key bindings for a player (defaults to WASD)
+struct PlayerKeys
+{
+    SDL_Scancode up    = SDL_SCANCODE_W;
+    SDL_Scancode down  = SDL_SCANCODE_S;
+    SDL_Scancode left  = SDL_SCANCODE_A;
+    SDL_Scancode right = SDL_SCANCODE_D;
+};
 
 class PlatformMovementComponent : public dae::BaseComponent
 {
@@ -34,6 +44,9 @@ public:
     void FreezeFor(float duration) { m_freezeTimer = duration; m_isMoving = false; }
     void SetHealthComponent(dae::HealthComponent* health) { m_health = health; }
     void SetEnemies(std::vector<EnemyComponent*>* enemies) { m_enemies = enemies; }
+    void SetKeys(const PlayerKeys& keys) { m_keys = keys; }
+    // Enable gamepad movement for this player (XInput index 0-3)
+    void SetGamepad(bool use, uint32_t index = 0) { m_useGamepad = use; m_gamepadIndex = index; }
 
 private:
     enum class PlayerState { Alive, Dying, Dead };
@@ -46,6 +59,9 @@ private:
     glm::vec2 m_facingDir{ 1.f, 0.f };
     dae::HealthComponent* m_health{ nullptr };
     std::vector<EnemyComponent*>* m_enemies{ nullptr };
+    PlayerKeys m_keys{};
+    bool     m_useGamepad{ false };
+    uint32_t m_gamepadIndex{ 0 };
 
     const dae::LevelMap* m_levelMap;
 

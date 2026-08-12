@@ -33,6 +33,7 @@ public:
 
     void PushDown();
     bool IsInCup() const { return m_state == State::Dead; }
+    void SetPlayer2(PlatformMovementComponent* p2) { m_player2 = p2; }
 
 private:
     const dae::LevelMap* m_levelMap;
@@ -44,6 +45,7 @@ private:
     float m_maxDrop;
     float m_fallSpeed;
     PlatformMovementComponent* m_player;
+    PlatformMovementComponent* m_player2{ nullptr };
     std::vector<BurgerPieceComponent*>* m_allPieces;
     const std::vector<CupDef>* m_cups;
     std::vector<EnemyComponent*>* m_enemies{ nullptr };

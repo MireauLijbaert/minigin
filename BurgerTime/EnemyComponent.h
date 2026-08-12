@@ -82,6 +82,9 @@ public:
     // Reset() (player death) still uses the original m_spawnPos.
     void SetSpawnCallback(std::function<glm::vec2()> cb) { m_getNextSpawn = std::move(cb); }
 
+    // Co-op: second player to target / collide with
+    void SetPlayer2(PlatformMovementComponent* p2) { m_player2 = p2; }
+
 private:
     enum class State { Entering, Walking, Stunned, FallingWithBurger, Dead, Waiting,
                        Squished,             // plays squish animation then dies
@@ -116,7 +119,11 @@ private:
 
     bool m_levelClearFrozen{ false };
     std::function<glm::vec2()> m_getNextSpawn;
+    PlatformMovementComponent* m_player2{ nullptr };
     dae::Subject m_subject;
+
+    // Returns the nearest alive player (for movement targeting)
+    PlatformMovementComponent* GetTarget() const;
     void UpdateWalking(float dt);
     void SyncPosition();
 };

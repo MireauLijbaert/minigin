@@ -24,12 +24,16 @@ public:
                         dae::TextComponent*             text,
                         std::vector<EnemyComponent*>*   enemies,
                         PlatformMovementComponent*      playerMove,
-                        PlayerAnimatorComponent*        playerAnim)
+                        PlayerAnimatorComponent*        playerAnim,
+                        PlatformMovementComponent*      playerMove2 = nullptr,
+                        PlayerAnimatorComponent*        playerAnim2 = nullptr)
         : BaseComponent(owner)
         , m_text{ text }
         , m_enemies{ enemies }
         , m_playerMove{ playerMove }
+        , m_playerMove2{ playerMove2 }
         , m_playerAnim{ playerAnim }
+        , m_playerAnim2{ playerAnim2 }
         , m_subject{ mgr ? &mgr->GetSubject() : nullptr }
     {
         if (m_subject) m_subject->AddObserver(this);
@@ -62,10 +66,14 @@ public:
         // (matches LevelManagerComponent::COMPLETE_DELAY = 3.5f)
         if (m_playerMove)
             m_playerMove->FreezeFor(3.5f);
+        if (m_playerMove2)
+            m_playerMove2->FreezeFor(3.5f);
 
-        // Switch player to celebrate animation
+        // Switch player(s) to celebrate animation
         if (m_playerAnim)
             m_playerAnim->SetCelebrating(true);
+        if (m_playerAnim2)
+            m_playerAnim2->SetCelebrating(true);
     }
 
     void Update() override {}
@@ -75,6 +83,8 @@ private:
     dae::TextComponent*             m_text;
     std::vector<EnemyComponent*>*   m_enemies;
     PlatformMovementComponent*      m_playerMove;
+    PlatformMovementComponent*      m_playerMove2;
     PlayerAnimatorComponent*        m_playerAnim;
+    PlayerAnimatorComponent*        m_playerAnim2;
     dae::Subject*                   m_subject;
 };

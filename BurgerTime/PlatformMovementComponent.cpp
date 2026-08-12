@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "TimeSingleton.h"
 #include "Event.h"
+#include "InputManager.h"
 #include <SDL3/SDL.h>
 
 PlatformMovementComponent::PlatformMovementComponent(dae::GameObject& owner,
@@ -88,10 +89,18 @@ void PlatformMovementComponent::Update()
 
     const auto* keys = SDL_GetKeyboardState(nullptr);
 
-    const bool anyKey = keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_RIGHT]
-                     || keys[SDL_SCANCODE_UP]   || keys[SDL_SCANCODE_DOWN];
+    auto& input = dae::InputManager::GetInstance();
+    const bool gpUp    = m_useGamepad && input.IsGamepadButtonHeld(dae::GamepadButton::DPadUp,    m_gamepadIndex);
+    const bool gpDown  = m_useGamepad && input.IsGamepadButtonHeld(dae::GamepadButton::DPadDown,  m_gamepadIndex);
+    const bool gpLeft  = m_useGamepad && input.IsGamepadButtonHeld(dae::GamepadButton::DPadLeft,  m_gamepadIndex);
+    const bool gpRight = m_useGamepad && input.IsGamepadButtonHeld(dae::GamepadButton::DPadRight, m_gamepadIndex);
 
-    if (!anyKey)
+    const bool wUp    = keys[m_keys.up]    || gpUp;
+    const bool wDown  = keys[m_keys.down]  || gpDown;
+    const bool wLeft  = keys[m_keys.left]  || gpLeft;
+    const bool wRight = keys[m_keys.right] || gpRight;
+
+    if (!wUp && !wDown && !wLeft && !wRight)
     {
         m_isMoving = false;
         m_stepTimer = STEP_INTERVAL;
@@ -109,32 +118,32 @@ void PlatformMovementComponent::Update()
     m_stepTimer = 0.f;
 
     // Vertical takes priority: only if a ladder is reachable
-    if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_DOWN])
+    if (wUp || wDown)
     {
-        float dy = keys[SDL_SCANCODE_DOWN] ? m_stepY : -m_stepY;
+        float dy = wDown ? m_stepY : -m_stepY;
         float newY = m_posY + dy;
         const auto* ladr = m_levelMap->FindLadder(m_posX, newY, m_ladrThresh);
         if (ladr)
         {
             m_posY = newY;
             m_posX = ladr->x;
-            m_facingDir = { 0.f, keys[SDL_SCANCODE_DOWN] ? -1.f : 1.f };
+            m_facingDir = { 0.f, wDown ? -1.f : 1.f };
             SyncPosition();
             return;
         }
     }
 
     // Horizontal: only if on a platform
-    if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_RIGHT])
+    if (wLeft || wRight)
     {
-        float dx = keys[SDL_SCANCODE_RIGHT] ? m_stepX : -m_stepX;
+        float dx = wRight ? m_stepX : -m_stepX;
         float newX = m_posX + dx;
         const auto* plat = m_levelMap->FindPlatform(newX, m_posY, m_platThresh);
         if (plat)
         {
             m_posX = newX;
             m_posY = plat->y;
-            m_facingDir = { keys[SDL_SCANCODE_RIGHT] ? 1.f : -1.f, 0.f };
+            m_facingDir = { wRight ? 1.f : -1.f, 0.f };
         }
     }
 

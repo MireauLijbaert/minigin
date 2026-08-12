@@ -32,6 +32,7 @@
 #include "CharacterAnimators.h"
 #include "TitleScreenComponent.h"
 #include "RoundClearComponent.h"
+#include "VersusEnemyPlayerComponent.h"
 #include "HighScoreManager.h"
 #include "NameEntryComponent.h"
 
@@ -60,6 +61,9 @@ static constexpr int MAX_LEVEL    = 6;
 
 static int s_currentLevel = 1;
 static int s_currentLives = PLAYER_LIVES;
+
+enum class GameMode { SinglePlayer, Coop, Versus };
+static GameMode s_gameMode = GameMode::SinglePlayer;
 
 static void LoadNameEntry();
 static void LoadTitleScreen();
@@ -183,12 +187,14 @@ static void LoadLevel(int levelNum)
     );
     playerMove->SetHealthComponent(playerHealthPtr);
     playerMove->SetEnemies(&enemies);
+    playerMove->SetGamepad(true, 0);   // P1 uses gamepad 0 (D-pad)
     PlatformMovementComponent* playerMovePtr = playerMove.get();
     playerObj->AddComponent(std::move(playerMove));
 
     auto pepper = std::make_unique<PepperComponent>(
         *playerObj, playerMovePtr, &enemies, charW, charH, 5
     );
+    pepper->SetGamepad(true, 0);       // P1 gamepad Y = pepper
     PepperComponent* pepperPtr = pepper.get();
     playerObj->AddComponent(std::move(pepper));
 
@@ -204,6 +210,100 @@ static void LoadLevel(int levelNum)
     });
 
     scene.Add(std::move(playerObj));
+
+    // Co-op: Player 2 (WASD + Q for pepper, shares health/lives with player 1)
+    PlatformMovementComponent* playerMove2Ptr = nullptr;
+    PlayerAnimatorComponent*   playerAnimator2Ptr = nullptr;
+    if (s_gameMode == GameMode::Coop)
+    {
+        auto p2Obj = std::make_unique<dae::GameObject>();
+
+        auto p2Anim = std::make_unique<AnimatedSpriteComponent>(*p2Obj, charW, charH);
+        p2Anim->AddClip("idle",      "bt_player_idle.png",       1, 1.f);
+        p2Anim->AddClip("idle_u",    "bt_player_idle_u.png",     1, 1.f);
+        p2Anim->AddClip("walk_h",    "bt_player_walk_l.png",     3, 8.f);
+        p2Anim->AddClip("walk_u",    "bt_player_walk_u.png",     3, 8.f);
+        p2Anim->AddClip("walk_d",    "bt_player_walk_d.png",     3, 8.f);
+        p2Anim->AddClip("die",       "bt_player_die.png",        6, 6.f, false);
+        p2Anim->AddClip("pepper_d",  "bt_player_pepper_d.png",   1, 1.f);
+        p2Anim->AddClip("pepper_h",  "bt_player_pepper_h.png",   1, 1.f);
+        p2Anim->AddClip("pepper_u",  "bt_player_pepper_u.png",   1, 1.f);
+        p2Anim->AddClip("celebrate", "bt_player_celebrate.png",  2, 4.5f);
+        // Tint player 2 blue so they're visually distinct
+        p2Anim->SetColorMod(100, 180, 255);
+        AnimatedSpriteComponent* p2AnimPtr = p2Anim.get();
+        p2Obj->AddComponent(std::move(p2Anim));
+
+        // Shared health, player 2 uses player 1's HealthComponent
+        auto p2Move = std::make_unique<PlatformMovementComponent>(
+            *p2Obj, levelData.map.get(), levelData.playerStart, charW, charH, transform
+        );
+        p2Move->SetHealthComponent(playerHealthPtr);
+        p2Move->SetEnemies(&enemies);
+        p2Move->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
+        playerMove2Ptr = p2Move.get();
+        p2Obj->AddComponent(std::move(p2Move));
+
+        auto p2Pepper = std::make_unique<PepperComponent>(
+            *p2Obj, playerMove2Ptr, &enemies, charW, charH, 5
+        );
+        p2Pepper->SetFireKey(SDL_SCANCODE_COMMA);
+        PepperComponent* p2PepperPtr = p2Pepper.get();
+        p2Obj->AddComponent(std::move(p2Pepper));
+
+        auto p2Animator = std::make_unique<PlayerAnimatorComponent>(*p2Obj, playerMove2Ptr, p2AnimPtr);
+        PlayerAnimatorComponent* p2AnimatorPtr = p2Animator.get();
+        playerAnimator2Ptr = p2AnimatorPtr;
+        p2Obj->AddComponent(std::move(p2Animator));
+
+        p2PepperPtr->SetPepperFiredCallback([p2AnimatorPtr]() {
+            p2AnimatorPtr->OnPepperFired();
+        });
+
+        // Wire sound observer (added later after enemies are set up)
+        scene.Add(std::move(p2Obj));
+    }
+
+    // Versus: Player 2 controls a Hot Dog (IJKL + comma)
+    VersusEnemyPlayerComponent* versusEnemyPtr = nullptr;
+    if (s_gameMode == GameMode::Versus)
+    {
+        // Spawn P2 at the first level spawn point (opposite side from P1)
+        glm::vec2 vsSpawn = levelData.playerStart;
+        if (!levelData.spawnPoints.empty())
+        {
+            const auto& sp = levelData.spawnPoints[0];
+            vsSpawn = { transform.WorldX(sp.x), transform.WorldY(sp.y) };
+        }
+
+        auto vsObj = std::make_unique<dae::GameObject>();
+
+        auto vsAnim = std::make_unique<AnimatedSpriteComponent>(*vsObj, charW, charH);
+        vsAnim->AddClip("idle",   "bt_hotdog.png",         1, 1.f);
+        vsAnim->AddClip("walk_h", "bt_hotdog_walk_h.png",  2, 8.f);
+        vsAnim->AddClip("walk_u", "bt_hotdog_walk_u.png",  2, 8.f);
+        vsAnim->AddClip("walk_d", "bt_hotdog_walk_d.png",  2, 8.f);
+        AnimatedSpriteComponent* vsAnimPtr = vsAnim.get();
+        vsObj->AddComponent(std::move(vsAnim));
+
+        auto vsMove = std::make_unique<PlatformMovementComponent>(
+            *vsObj, levelData.map.get(), vsSpawn, charW, charH, transform
+        );
+        vsMove->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
+        PlatformMovementComponent* vsMovePtr = vsMove.get();
+        vsObj->AddComponent(std::move(vsMove));
+
+        auto vsEnemy = std::make_unique<VersusEnemyPlayerComponent>(*vsObj, vsMovePtr, playerMovePtr);
+        versusEnemyPtr = vsEnemy.get();
+        vsObj->AddComponent(std::move(vsEnemy));
+
+        vsObj->AddComponent(std::make_unique<VersusEnemyAnimatorComponent>(*vsObj, vsMovePtr, vsAnimPtr));
+
+        // P1's pepper can stun the versus hot dog
+        pepperPtr->SetVersusTarget(versusEnemyPtr);
+
+        scene.Add(std::move(vsObj));
+    }
 
     // Enemies are defined in the level file under [ENEMIES]
     for (const auto& def : levelData.enemies)
@@ -273,12 +373,28 @@ static void LoadLevel(int levelNum)
             &levelData.cups,
             &enemies
         );
-        burgers.push_back(burgerComp.get());
+        BurgerPieceComponent* burgerPtr = burgerComp.get();
+        burgers.push_back(burgerPtr);
         burgerObj->AddComponent(std::move(burgerComp));
+        if (playerMove2Ptr) burgerPtr->SetPlayer2(playerMove2Ptr);
         scene.Add(std::move(burgerObj));
     }
 
-    // Debug overlay (F1 to toggle)
+    // Co-op: wire player 2 into all enemies
+    if (playerMove2Ptr)
+    {
+        for (auto* ep : enemies)
+            ep->SetPlayer2(playerMove2Ptr);
+    }
+
+    // F2 = mute/unmute (works in every scene)
+    {
+        auto muteObj = std::make_unique<dae::GameObject>();
+        muteObj->AddComponent(std::make_unique<MuteToggleComponent>(*muteObj));
+        scene.Add(std::move(muteObj));
+    }
+
+    // Debug overlay (F3 to toggle)
     {
         auto dbg = std::make_unique<dae::GameObject>();
         dbg->AddComponent(std::make_unique<DebugLevelComponent>(
@@ -343,7 +459,7 @@ static void LoadLevel(int levelNum)
         dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
         obj->AddComponent(std::make_unique<RoundClearComponent>(
-            *obj, mgrPtr, tp, &enemies, playerMovePtr, playerAnimatorPtr));
+            *obj, mgrPtr, tp, &enemies, playerMovePtr, playerAnimatorPtr, playerMove2Ptr, playerAnimator2Ptr));
         obj->SetLocalPosition(350.f, 250.f);
         scene.Add(std::move(obj));
     }
@@ -625,15 +741,38 @@ static void LoadTitleScreen()
         auto text = std::make_unique<dae::TextComponent>(*obj, rp, "PRESS ENTER TO START", smallFont);
         dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
-        obj->AddComponent(std::make_unique<TitleScreenComponent>(*obj, tp, []()
+        auto start1P = []()
         {
+            s_gameMode     = GameMode::SinglePlayer;
             s_currentLives = PLAYER_LIVES;
             dae::SceneManager::GetInstance().RequestLoad([]()
             {
                 dae::SceneManager::GetInstance().ClearAll();
                 LoadLevel(1);
             });
-        }));
+        };
+        auto start2P = []()
+        {
+            s_gameMode     = GameMode::Coop;
+            s_currentLives = PLAYER_LIVES;
+            dae::SceneManager::GetInstance().RequestLoad([]()
+            {
+                dae::SceneManager::GetInstance().ClearAll();
+                LoadLevel(1);
+            });
+        };
+        auto startVS = []()
+        {
+            s_gameMode     = GameMode::Versus;
+            s_currentLives = PLAYER_LIVES;
+            dae::SceneManager::GetInstance().RequestLoad([]()
+            {
+                dae::SceneManager::GetInstance().ClearAll();
+                LoadLevel(1);
+            });
+        };
+        obj->AddComponent(std::make_unique<TitleScreenComponent>(*obj, tp,
+            std::move(start1P), std::move(start2P), std::move(startVS)));
         obj->SetLocalPosition(350.f, 430.f);
         scene.Add(std::move(obj));
     }

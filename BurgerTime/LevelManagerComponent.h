@@ -5,6 +5,8 @@
 #include "BurgerPieceComponent.h"
 #include "TimeSingleton.h"
 #include "GameObject.h"
+#include "InputManager.h"
+#include "Command.h"
 #include <functional>
 #include <vector>
 #include <SDL3/SDL.h>
@@ -19,22 +21,27 @@ public:
         : BaseComponent(owner)
         , m_burgers{ burgers }
         , m_onComplete{ std::move(onComplete) }
-    {}
+    {
+        // F1 skip: bind on key-UP so holding does nothing
+        dae::InputManager::GetInstance().BindKeyboardInput(
+            SDL_SCANCODE_F1,
+            std::make_unique<dae::LambdaCommand>([this]()
+            {
+                if (!m_triggered && !m_completing)
+                {
+                    m_completing = true;
+                    m_timer = 0.f;
+                }
+            }),
+            dae::InputState::Up
+        );
+    }
 
     void Render() override {}
 
     void Update() override
     {
         if (m_triggered) return;
-
-        const auto* keys = SDL_GetKeyboardState(nullptr);
-        bool skipPressed = keys[SDL_SCANCODE_N] != 0;
-        if (skipPressed && !m_prevSkip)
-        {
-            m_completing = true;
-            m_timer = 0.f;
-        }
-        m_prevSkip = skipPressed;
 
         if (!m_completing)
         {
@@ -64,7 +71,6 @@ private:
     std::function<void()> m_onComplete;
     bool m_triggered{ false };
     bool m_completing{ false };
-    bool m_prevSkip{ false };
     float m_timer{ COMPLETE_DELAY };
 
     dae::Subject m_subject;
