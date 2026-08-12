@@ -44,6 +44,7 @@ struct LevelData
     glm::vec2 playerStart{};
     std::vector<BurgerPieceDef>  burgers;
     std::vector<CupDef>          cups;
+    std::vector<glm::vec2>       spawnPoints; // sprite-space, sorted BR,BL,TR,TL
     std::vector<EnemySpawnDef>   enemies;
 };
 

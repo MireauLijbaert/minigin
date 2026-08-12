@@ -3,6 +3,7 @@
 #include "Subject.h"
 #include "LevelMap.h"
 #include "LevelLoader.h"
+#include <functional>
 #include <glm/glm.hpp>
 
 class PlatformMovementComponent;
@@ -77,6 +78,10 @@ public:
     void Freeze() { m_levelClearFrozen = true; }
     bool IsLevelClearFrozen() const { return m_levelClearFrozen; }
 
+    // Set a callback that returns the next spawn position on each natural respawn.
+    // Reset() (player death) still uses the original m_spawnPos.
+    void SetSpawnCallback(std::function<glm::vec2()> cb) { m_getNextSpawn = std::move(cb); }
+
 private:
     enum class State { Entering, Walking, Stunned, FallingWithBurger, Dead, Waiting,
                        Squished,             // plays squish animation then dies
@@ -110,6 +115,7 @@ private:
     static constexpr float SQUISH_ANIM_DURATION   = 0.8f; // 4 frames @ ~5fps
 
     bool m_levelClearFrozen{ false };
+    std::function<glm::vec2()> m_getNextSpawn;
     dae::Subject m_subject;
     void UpdateWalking(float dt);
     void SyncPosition();

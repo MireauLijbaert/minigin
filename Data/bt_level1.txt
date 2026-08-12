@@ -1,5 +1,5 @@
 # BurgerTime Level 1
-------t---t---t--
+S-----t---t---t-S
 |   | | |   |   |
 
 |   | | |   |   |
@@ -17,15 +17,14 @@
 |   |   |   | | |
 
 |   |   |   | | |
---b---b-P-b------
+S-b---b-P-b-----S
 
 
 
   C   C   C   C
 
 [ENEMIES]
-# type  spawnX  spawnY  delay
-EGG     224     145     0.5
-HOTDOG  -16     145     1.0
-HOTDOG  224     1       1.5
-HOTDOG  -16     1       2.0
+E 0.5
+H 1.0
+H 1.5
+H 2.0

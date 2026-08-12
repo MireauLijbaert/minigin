@@ -35,7 +35,9 @@
 #include "HighScoreManager.h"
 #include "NameEntryComponent.h"
 
+#include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <string>
 namespace fs = std::filesystem;
 
@@ -211,6 +213,27 @@ static void LoadLevel(int levelNum)
 
         // Stagger initial entry so enemies don't all appear at once
         enemyPtr->Reset(def.delay);
+    }
+
+    // Spawn-rotation system: enemies respawn cycling BR,BL,TR,TL,...
+    // levelData.spawnPoints is already sorted; convert to world coords.
+    {
+        auto spawnPts = std::make_shared<std::vector<glm::vec2>>();
+        for (const auto& sp : levelData.spawnPoints)
+            spawnPts->push_back({ transform.WorldX(sp.x), transform.WorldY(sp.y) });
+
+        // Initial spawns consumed indices 0..enemies.size()-1; next respawn continues at N (wraps)
+        auto rotIdx = std::make_shared<int>(static_cast<int>(levelData.enemies.size()));
+
+        for (auto* ep : enemies)
+        {
+            ep->SetSpawnCallback([spawnPts, rotIdx]() -> glm::vec2
+            {
+                if (spawnPts->empty()) return { 0.f, 0.f };
+                int i = (*rotIdx)++ % static_cast<int>(spawnPts->size());
+                return (*spawnPts)[i];
+            });
+        }
     }
 
     // Burger pieces

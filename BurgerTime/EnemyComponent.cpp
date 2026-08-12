@@ -168,8 +168,17 @@ void EnemyComponent::Update()
         m_stateTimer -= dt;
         if (m_stateTimer <= 0.f)
         {
-            m_posX = m_spawnPos.x;
-            m_posY = m_spawnPos.y;
+            if (m_getNextSpawn)
+            {
+                auto sp = m_getNextSpawn();
+                m_posX = sp.x;
+                m_posY = sp.y;
+            }
+            else
+            {
+                m_posX = m_spawnPos.x;
+                m_posY = m_spawnPos.y;
+            }
             m_MovementDirection = { (m_player->GetPosX() >= m_posX) ? 1.f : -1.f, 0.f };
             const auto* plat = m_levelMap->FindPlatform(m_posX, m_posY, m_platSnap * 2.f);
             m_state = plat ? State::Walking : State::Entering;
