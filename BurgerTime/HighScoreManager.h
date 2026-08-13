@@ -40,6 +40,8 @@ public:
                 m_entries.push_back(e);
         }
         Sort();
+        if (m_entries.size() > MAX_ENTRIES)
+            m_entries.resize(MAX_ENTRIES);
     }
 
     void Save() const
