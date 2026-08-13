@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-// Bonus item that spawns periodically in the center of the level.
+// Bonus item that appears every CUPS_PER_BONUS burger pieces landing in cups.
 // Gives score + 1 pepper charge on pickup.
 class BonusItemComponent : public dae::BaseComponent
 {
@@ -27,9 +27,7 @@ public:
                        PlatformMovementComponent* player,
                        PepperComponent* pepper,
                        int score             = 500,
-                       float firstAppear     = 10.f,
                        float activeTime      = 10.f,
-                       float respawnTime     = 25.f,
                        const std::string& textureName = "")
         : BaseComponent(owner)
         , m_pos{ worldPos }
@@ -38,35 +36,34 @@ public:
         , m_pepper{ pepper }
         , m_score{ score }
         , m_activeTime{ activeTime }
-        , m_respawnTime{ respawnTime }
-        , m_timer{ firstAppear }
-        , m_active{ false }
     {
         if (!textureName.empty())
             m_tex = dae::ResourceManager::GetInstance().LoadTexture(textureName);
     }
 
+    // Called by each BurgerPieceComponent when it lands in a cup.
+    // Every CUPS_PER_BONUS calls triggers a bonus appearance.
+    void OnBurgerInCup()
+    {
+        ++m_cupCount;
+        if (m_cupCount % CUPS_PER_BONUS == 0 && !m_active)
+        {
+            m_active = true;
+            m_timer  = m_activeTime;
+            m_subject.NotifyObservers(dae::Event("BonusAppeared"), GetOwner());
+        }
+    }
+
     void Update() override
     {
+        if (!m_active) return;
+
         const float dt = dae::Time::GetInstance().GetDeltaTime();
         m_timer -= dt;
 
-        if (!m_active)
-        {
-            if (m_timer <= 0.f)
-            {
-                m_active = true;
-                m_timer  = m_activeTime;
-                m_subject.NotifyObservers(dae::Event("BonusAppeared"), GetOwner());
-            }
-            return;
-        }
-
-        // Timeout, go inactive and start respawn countdown
         if (m_timer <= 0.f)
         {
             m_active = false;
-            m_timer  = m_respawnTime;
             return;
         }
 
@@ -84,9 +81,6 @@ public:
     void Render() override
     {
         if (!m_active) return;
-
-        // Flicker during last 3 seconds
-        if (m_timer < 3.f && (static_cast<int>(m_timer * 8.f) % 2 == 0)) return;
 
         SDL_Renderer* r = dae::Renderer::GetInstance().GetSDLRenderer();
         SDL_FRect rect{
@@ -118,16 +112,18 @@ private:
     PepperComponent*           m_pepper;
     int   m_score;
     float m_activeTime;
-    float m_respawnTime;
-    float m_timer;
-    bool  m_active;
+    float m_timer{ 0.f };
+    bool  m_active{ false };
+    int   m_cupCount{ 0 };
+
+    static constexpr int CUPS_PER_BONUS = 3;
 
     dae::Subject m_subject;
 
     void Pickup()
     {
         m_active = false;
-        m_timer  = m_respawnTime;
+        m_timer  = 0.f;
         ScoreManager::GetInstance().AddScore(m_score);
         m_pepper->AddCharge(1);
         m_subject.NotifyObservers(dae::Event("BonusPickedUp"), GetOwner());

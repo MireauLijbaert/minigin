@@ -47,6 +47,12 @@ public:
     void SetKeys(const PlayerKeys& keys) { m_keys = keys; }
     // Enable gamepad movement for this player (XInput index 0-3)
     void SetGamepad(bool use, uint32_t index = 0) { m_useGamepad = use; m_gamepadIndex = index; }
+    // Set step rate (seconds per step). Default 1/60. Use higher value to slow down (e.g. 1/12 for enemy speed).
+    void SetStepInterval(float interval) { m_stepInterval = interval; }
+    // Teleport to a world position immediately (updates internal coords + syncs transform)
+    void SetPosition(float x, float y) { m_posX = x; m_posY = y; SyncPosition(); }
+    // True for a brief window after P1 respawns (prevents spawn-camping)
+    bool IsInvincible() const { return m_invincibleTimer > 0.f; }
 
 private:
     enum class PlayerState { Alive, Dying, Dead };
@@ -73,10 +79,12 @@ private:
     float m_ladrThresh;
 
     float m_stepTimer{ 0.f };
+    float m_stepInterval{ 1.f / 60.f };  // seconds per movement step
+    float m_invincibleTimer{ 0.f };       // post-respawn grace period
 
-    static constexpr float STEP_INTERVAL       = 1.f / 60.f;
-    static constexpr float DEATH_ANIM_DURATION = 1.2f;  // 6 frames @ ~5fps
-    static constexpr float RESPAWN_DELAY       = 2.f;
+    static constexpr float DEATH_ANIM_DURATION  = 1.2f;  // 6 frames @ ~5fps
+    static constexpr float RESPAWN_DELAY        = 2.f;
+    static constexpr float INVINCIBLE_DURATION  = 2.f;   // invincible after respawn
 
     dae::Subject m_subject;
     void SyncPosition();

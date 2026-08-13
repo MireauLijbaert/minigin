@@ -4,10 +4,12 @@
 #include "LevelLoader.h"
 #include "LevelMap.h"
 #include "Texture2D.h"
+#include <functional>
 #include <memory>
 #include <vector>
 
 class EnemyComponent;
+class VersusEnemyPlayerComponent;
 
 enum class BurgerType { TopBun, Patty, Lettuce, BotBun, Tomato, Cheese };
 
@@ -34,6 +36,9 @@ public:
     void PushDown();
     bool IsInCup() const { return m_state == State::Dead; }
     void SetPlayer2(PlatformMovementComponent* p2) { m_player2 = p2; }
+    void SetVersusEnemy(VersusEnemyPlayerComponent* vep) { m_versusEnemy = vep; }
+    // Called once per cup-landing event; wire in Main.cpp to BonusItemComponent::OnBurgerInCup()
+    void SetOnCupLanded(std::function<void()> cb) { m_onCupLanded = std::move(cb); }
 
 private:
     const dae::LevelMap* m_levelMap;
@@ -49,6 +54,9 @@ private:
     std::vector<BurgerPieceComponent*>* m_allPieces;
     const std::vector<CupDef>* m_cups;
     std::vector<EnemyComponent*>* m_enemies{ nullptr };
+    VersusEnemyPlayerComponent*   m_versusEnemy{ nullptr };
+    bool                          m_versusEnemyCaught{ false };
+    std::function<void()>         m_onCupLanded{};
     std::vector<EnemyComponent*> m_caughtEnemies;
 
     bool  m_pressed[4]{};

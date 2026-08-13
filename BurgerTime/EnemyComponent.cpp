@@ -23,6 +23,7 @@ EnemyComponent::EnemyComponent(dae::GameObject& owner,
     , m_charHalfW{ charWorldW * 0.5f }
     , m_charRenderH{ charWorldH + 2.f * transform.scaleY }
     , m_spawnPos{ worldPos }
+    , m_baseSpeed{ SPEED_SPRITE * transform.scaleX }
     , m_speed{ SPEED_SPRITE * transform.scaleX }
     , m_platSnap{ 2.f * transform.scaleY }
     , m_ladrSnap{ 4.f * transform.scaleX }
@@ -126,6 +127,11 @@ void EnemyComponent::Update()
     if (m_levelClearFrozen) return;
 
     float dt = dae::Time::GetInstance().GetDeltaTime();
+
+    // Recompute effective speed: base speed × level multiplier × in-level ramp
+    m_levelTime += dt;
+    const float ramp = std::min(m_levelTime / RAMP_DURATION, 1.f) * RAMP_BONUS;
+    m_speed = m_baseSpeed * m_speedMult * (1.f + ramp);
 
     switch (m_state)
     {

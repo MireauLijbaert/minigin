@@ -42,6 +42,7 @@ struct LevelData
 {
     std::unique_ptr<dae::LevelMap> map;
     glm::vec2 playerStart{};
+    glm::vec2 bonusPos{ -1.f, -1.f }; // world-space; (-1,-1) means no B marker placed yet
     std::vector<BurgerPieceDef>  burgers;
     std::vector<CupDef>          cups;
     std::vector<glm::vec2>       spawnPoints; // sprite-space, sorted BR,BL,TR,TL

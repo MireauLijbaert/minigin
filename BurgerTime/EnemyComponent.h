@@ -82,6 +82,10 @@ public:
     // Reset() (player death) still uses the original m_spawnPos.
     void SetSpawnCallback(std::function<glm::vec2()> cb) { m_getNextSpawn = std::move(cb); }
 
+    // Applied on top of base speed; call once per enemy after spawning.
+    // 1.0 = normal, 1.5 = 50% faster, etc.
+    void SetSpeedMultiplier(float m) { m_speedMult = m; }
+
     // Co-op: second player to target / collide with
     void SetPlayer2(PlatformMovementComponent* p2) { m_player2 = p2; }
 
@@ -106,7 +110,10 @@ private:
     float m_stateTimer{ 0.f };
 
     float m_intersectionCooldown{ 0.f };
-    float m_speed;
+    float m_speed;         // recomputed each frame from base * mult * ramp
+    float m_baseSpeed;     // SPEED_SPRITE * scaleX, fixed at construction
+    float m_speedMult{ 1.f };   // set by Main.cpp based on current level number
+    float m_levelTime{ 0.f };   // time in level, drives the in-level speed ramp
     float m_platSnap, m_ladrSnap, m_interThresh;
     float m_hitRadiusSq; // collision distance squared for player touch
 
@@ -116,6 +123,8 @@ private:
     static constexpr float RESPAWN_DELAY          = 4.f;
     static constexpr float BURGER_RECOVERY_DELAY  = 1.5f;
     static constexpr float SQUISH_ANIM_DURATION   = 0.8f; // 4 frames @ ~5fps
+    static constexpr float RAMP_DURATION          = 60.f; // seconds to reach full in-level ramp
+    static constexpr float RAMP_BONUS             = 0.5f; // +50% speed at peak ramp
 
     bool m_levelClearFrozen{ false };
     std::function<glm::vec2()> m_getNextSpawn;

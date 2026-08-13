@@ -3,6 +3,7 @@
 #include "AnimatedSpriteComponent.h"
 #include "EnemyComponent.h"
 #include "PlatformMovementComponent.h"
+#include "VersusEnemyPlayerComponent.h"
 #include "TimeSingleton.h"
 
 // ---------------------------------------------------------------------------
@@ -205,15 +206,44 @@ class VersusEnemyAnimatorComponent : public dae::BaseComponent
 {
 public:
     VersusEnemyAnimatorComponent(dae::GameObject& owner,
-                                 PlatformMovementComponent* player,
-                                 AnimatedSpriteComponent*   anim)
-        : BaseComponent(owner), m_player{ player }, m_anim{ anim }
+                                 PlatformMovementComponent*    player,
+                                 AnimatedSpriteComponent*      anim,
+                                 VersusEnemyPlayerComponent*   versusEnemy = nullptr)
+        : BaseComponent(owner), m_player{ player }, m_anim{ anim }, m_versusEnemy{ versusEnemy }
     {}
 
     void Update() override
     {
         if (!m_player || !m_anim) return;
-        if (!m_player->IsAlive()) return;
+
+        // Dead / locked — P2 is off-screen, nothing to render
+        if (m_versusEnemy && !m_versusEnemy->IsAlive()) return;
+
+        // Entering: P2 is auto-walking horizontally onto the level
+        if (m_versusEnemy && m_versusEnemy->IsEntering())
+        {
+            // WalkingIn sub-state = just landed, brief idle before control
+            // Entering sub-state = actually moving, play walk_h
+            m_anim->SetFlipH(m_versusEnemy->IsEnteringRight()); // base sprite faces LEFT
+            m_anim->Play("walk_h");
+            return;
+        }
+
+        // Climbing out of cup — play walk_u animation
+        if (m_versusEnemy && m_versusEnemy->IsClimbingFromCup())
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("walk_u");
+            return;
+        }
+
+        // Stunned
+        if (m_versusEnemy && m_versusEnemy->IsStunned())
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("stunned");
+            return;
+        }
 
         if (!m_player->IsMoving())
         {
@@ -243,6 +273,7 @@ public:
     void Render() override {}
 
 private:
-    PlatformMovementComponent* m_player;
-    AnimatedSpriteComponent*   m_anim;
+    PlatformMovementComponent*  m_player;
+    AnimatedSpriteComponent*    m_anim;
+    VersusEnemyPlayerComponent* m_versusEnemy;
 };

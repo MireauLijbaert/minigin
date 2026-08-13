@@ -1,5 +1,5 @@
 # BurgerTime Level 4
-S-t---t---t---t-S
+S-t---t-B-t---t-S
 |   |   |   |   |
 --c---l---o---c--
   |   |   |   |

@@ -1,5 +1,6 @@
 #include "BurgerPieceComponent.h"
 #include "EnemyComponent.h"
+#include "VersusEnemyPlayerComponent.h"
 #include "PlatformMovementComponent.h"
 #include "ScoreManager.h"
 #include "ScorePopupManager.h"
@@ -127,22 +128,40 @@ void BurgerPieceComponent::StartFalling()
         m_targetY = plat->y;
     }
 
-    // Catch any enemies standing on this burger's platform row
-    if (m_caughtEnemies.empty() && m_enemies)
+    // Catch any enemies / P2 standing on this burger's platform row.
+    // Guard prevents re-catching on bounce StartFalling() calls.
+    if (m_caughtEnemies.empty() && !m_versusEnemyCaught)
     {
         float leftEdge = GetLeftEdgeX();
-        for (auto* enemy : *m_enemies)
+
+        if (m_enemies)
         {
-            if (!enemy->IsAlive()) continue;
-            if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
-                && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
+            for (auto* enemy : *m_enemies)
             {
-                m_caughtEnemies.push_back(enemy);
-                enemy->CatchByBurger();
+                if (!enemy->IsAlive()) continue;
+                if (std::abs(enemy->GetPosY() - m_fallingY) < m_yTolerance
+                    && enemy->GetPosX() >= leftEdge && enemy->GetPosX() <= leftEdge + m_pieceW)
+                {
+                    m_caughtEnemies.push_back(enemy);
+                    enemy->CatchByBurger();
+                }
             }
         }
 
-        if (!m_caughtEnemies.empty())
+        // Carry P2 (same logic as AI enemies)
+        if (m_versusEnemy && m_versusEnemy->IsAlive() && !m_versusEnemy->IsCaughtByBurger())
+        {
+            float vx = m_versusEnemy->GetPosX();
+            float vy = m_versusEnemy->GetPosY();
+            if (std::abs(vy - m_fallingY) < m_yTolerance
+                && vx >= leftEdge && vx <= leftEdge + m_pieceW)
+            {
+                m_versusEnemyCaught = true;
+                m_versusEnemy->CatchByBurger();
+            }
+        }
+
+        if (!m_caughtEnemies.empty() || m_versusEnemyCaught)
             m_extraFloors = 2;
     }
 
@@ -209,6 +228,16 @@ void BurgerPieceComponent::OnLanded()
                     for (auto* enemy : m_caughtEnemies) enemy->RecoverFromBurger(m_fallingY);
                     m_caughtEnemies.clear();
                 }
+                // P2 carried into cup: award score and send them back to the entry corner
+                if (m_versusEnemyCaught && m_versusEnemy)
+                {
+                    constexpr int CARRY_SCORE = 500;
+                    ScoreManager::GetInstance().AddScore(CARRY_SCORE);
+                    ScorePopupManager::GetInstance().Spawn(
+                        CARRY_SCORE, m_versusEnemy->GetPosX(), m_versusEnemy->GetPosY());
+                    m_versusEnemy->LandedInCup();
+                    m_versusEnemyCaught = false;
+                }
                 int stackCount = 0;
                 for (auto* other : *m_allPieces)
                     if (other != this && other->m_state == State::Dead
@@ -219,8 +248,33 @@ void BurgerPieceComponent::OnLanded()
                 m_fallingY = cup.worldY - static_cast<float>(stackCount) * m_pieceH;
                 m_extraFloors = 0;
                 m_state = State::Dead;
+                if (m_onCupLanded) m_onCupLanded();
                 return;
             }
+        }
+    }
+
+    // Versus enemy: recover if they were being carried, squish if burger landed on them
+    if (m_versusEnemy)
+    {
+        if (m_versusEnemyCaught)
+        {
+            // Award score for carrying P2 (same scale as AI enemies: 500 for one)
+            constexpr int CARRY_SCORE = 500;
+            ScoreManager::GetInstance().AddScore(CARRY_SCORE);
+            ScorePopupManager::GetInstance().Spawn(
+                CARRY_SCORE, m_versusEnemy->GetPosX(), m_versusEnemy->GetPosY());
+            m_versusEnemy->RecoverFromBurger(m_fallingY);
+            m_versusEnemyCaught = false;
+        }
+        else if (m_versusEnemy->IsAlive())
+        {
+            float leftEdge = GetLeftEdgeX();
+            float vx = m_versusEnemy->GetPosX();
+            float vy = m_versusEnemy->GetPosY();
+            if (std::abs(vy - m_fallingY) < m_yTolerance
+                && vx >= leftEdge && vx <= leftEdge + m_pieceW)
+                m_versusEnemy->Kill();
         }
     }
 
@@ -320,6 +374,8 @@ void BurgerPieceComponent::Update()
 
         for (auto* enemy : m_caughtEnemies)
             enemy->SetFallingY(m_fallingY);
+        if (m_versusEnemyCaught && m_versusEnemy)
+            m_versusEnemy->SetFallingY(m_fallingY);
         if (m_fallingY >= m_targetY)
         {
             m_fallingY = m_targetY;

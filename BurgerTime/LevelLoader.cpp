@@ -82,6 +82,12 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
                     transform.WorldY(static_cast<float>(GridPlatformY(row)))
                 };
 
+            if (c == 'B')
+                data.bonusPos = {
+                    transform.WorldX(static_cast<float>(GridLadderX(col))),
+                    transform.WorldY(static_cast<float>(GridPlatformY(row)))
+                };
+
             if (c == 't' || c == 'm' || c == 'l' || c == 'b' || c == 'o' || c == 'c')
             {
                 BurgerPieceDef def{};

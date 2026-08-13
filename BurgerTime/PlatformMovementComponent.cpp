@@ -72,11 +72,16 @@ void PlatformMovementComponent::Update()
             m_posX = m_startPos.x;
             m_posY = m_startPos.y;
             m_state = PlayerState::Alive;
+            m_invincibleTimer = INVINCIBLE_DURATION;
             SyncPosition();
             m_subject.NotifyObservers(dae::Event("PlayerRespawned"), GetOwner());
         }
         return;
     }
+
+    // Tick post-respawn invincibility window
+    if (m_invincibleTimer > 0.f)
+        m_invincibleTimer -= dt;
 
     // Pepper throw freeze: block movement input for the throw duration
     if (m_freezeTimer > 0.f)
@@ -103,14 +108,14 @@ void PlatformMovementComponent::Update()
     if (!wUp && !wDown && !wLeft && !wRight)
     {
         m_isMoving = false;
-        m_stepTimer = STEP_INTERVAL;
+        m_stepTimer = m_stepInterval;
         SyncPosition();
         return;
     }
     m_isMoving = true;
 
     m_stepTimer += dt;
-    if (m_stepTimer < STEP_INTERVAL)
+    if (m_stepTimer < m_stepInterval)
     {
         SyncPosition();
         return;

@@ -264,40 +264,65 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(p2Obj));
     }
 
-    // Versus: Player 2 controls a Hot Dog (IJKL + comma)
+    // Versus: Player 2 replaces the first hotdog enemy.
+    // Find that enemy now so we can skip it in the loop below.
     VersusEnemyPlayerComponent* versusEnemyPtr = nullptr;
+    int vsEnemyIdx = -1; // index of the hotdog slot stolen for P2
+
     if (s_gameMode == GameMode::Versus)
     {
-        // Spawn P2 at the first level spawn point (opposite side from P1)
-        glm::vec2 vsSpawn = levelData.playerStart;
-        if (!levelData.spawnPoints.empty())
+        // Find the first hotdog in the level's enemy list
+        for (int i = 0; i < static_cast<int>(levelData.enemies.size()); ++i)
         {
-            const auto& sp = levelData.spawnPoints[0];
-            vsSpawn = { transform.WorldX(sp.x), transform.WorldY(sp.y) };
+            if (levelData.enemies[i].type == 0) // 0 = Hotdog
+            {
+                vsEnemyIdx = i;
+                break;
+            }
         }
+
+        // Entry point: the stolen hotdog's spawn position (may be off-screen edge)
+        // Platform position: where P2 ends up after walk-in (near P1's start, same row as entry)
+        EnemySpawnDef vsDef{};
+        if (vsEnemyIdx >= 0) vsDef = levelData.enemies[vsEnemyIdx];
+
+        // Entry corner: same S-marker position the AI hotdog would have spawned at
+        glm::vec2 vsEntry{
+            transform.WorldX(vsDef.spawnX),
+            transform.WorldY(vsDef.spawnY)
+        };
+        // P2 is locked here for vsDef.delay seconds (mirrors enemy freeze before walk-in)
 
         auto vsObj = std::make_unique<dae::GameObject>();
 
         auto vsAnim = std::make_unique<AnimatedSpriteComponent>(*vsObj, charW, charH);
-        vsAnim->AddClip("idle",   "bt_hotdog.png",         1, 1.f);
-        vsAnim->AddClip("walk_h", "bt_hotdog_walk_h.png",  2, 8.f);
-        vsAnim->AddClip("walk_u", "bt_hotdog_walk_u.png",  2, 8.f);
-        vsAnim->AddClip("walk_d", "bt_hotdog_walk_d.png",  2, 8.f);
+        vsAnim->AddClip("idle",    "bt_hotdog.png",          1, 1.f);
+        vsAnim->AddClip("walk_h",  "bt_hotdog_walk_h.png",  2, 8.f);
+        vsAnim->AddClip("walk_u",  "bt_hotdog_walk_u.png",  2, 8.f);
+        vsAnim->AddClip("walk_d",  "bt_hotdog_walk_d.png",  2, 8.f);
+        vsAnim->AddClip("stunned", "bt_hotdog_stunned.png", 2, 4.f);
         AnimatedSpriteComponent* vsAnimPtr = vsAnim.get();
         vsObj->AddComponent(std::move(vsAnim));
 
         auto vsMove = std::make_unique<PlatformMovementComponent>(
-            *vsObj, levelData.map.get(), vsSpawn, charW, charH, transform
+            *vsObj, levelData.map.get(), vsEntry, charW, charH, transform
         );
         vsMove->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
+        vsMove->SetStepInterval(1.f / 12.f); // ~enemy speed (P1 is 1/60)
         PlatformMovementComponent* vsMovePtr = vsMove.get();
         vsObj->AddComponent(std::move(vsMove));
 
-        auto vsEnemy = std::make_unique<VersusEnemyPlayerComponent>(*vsObj, vsMovePtr, playerMovePtr);
+        auto vsEnemy = std::make_unique<VersusEnemyPlayerComponent>(
+            *vsObj, vsMovePtr, playerMovePtr, vsEntry,
+            levelData.map.get(),
+            10.f * transform.scaleX,   // same entry speed as AI enemies (SPEED_SPRITE * scaleX)
+            2.f  * transform.scaleY    // platform snap threshold
+        );
         versusEnemyPtr = vsEnemy.get();
         vsObj->AddComponent(std::move(vsEnemy));
 
-        vsObj->AddComponent(std::make_unique<VersusEnemyAnimatorComponent>(*vsObj, vsMovePtr, vsAnimPtr));
+        vsObj->AddComponent(std::make_unique<VersusEnemyAnimatorComponent>(
+            *vsObj, vsMovePtr, vsAnimPtr, versusEnemyPtr));
 
         // P1's pepper can stun the versus hot dog
         pepperPtr->SetVersusTarget(versusEnemyPtr);
@@ -305,9 +330,15 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(vsObj));
     }
 
-    // Enemies are defined in the level file under [ENEMIES]
+    // Level-based enemy speed: +10% per level, capped at 2×. Level 1 = 1.0, Level 6 = 1.5, etc.
+    const float levelSpeedMult = std::min(1.f + (levelNum - 1) * 0.1f, 2.f);
+
+    // Enemies — skip the hotdog slot taken by P2 in Versus mode
+    int enemyIdx = 0;
     for (const auto& def : levelData.enemies)
     {
+        int thisIdx = enemyIdx++;
+        if (thisIdx == vsEnemyIdx) continue; // this slot belongs to P2
         EnemyType eType = static_cast<EnemyType>(def.type);
         glm::vec2 spawnPos{ transform.WorldX(def.spawnX), transform.WorldY(def.spawnY) };
 
@@ -323,6 +354,7 @@ static void LoadLevel(int levelNum)
             *enemyObj, levelData.map.get(), spawnPos, charW, charH, transform, playerMovePtr, eType
         );
         EnemyComponent* enemyPtr = enemyComp.get();
+        enemyPtr->SetSpeedMultiplier(levelSpeedMult);
         enemies.push_back(enemyPtr);
         enemyObj->AddComponent(std::move(enemyComp));
 
@@ -344,7 +376,7 @@ static void LoadLevel(int levelNum)
             spawnPts->push_back({ transform.WorldX(sp.x), transform.WorldY(sp.y) });
 
         // Initial spawns consumed indices 0..enemies.size()-1; next respawn continues at N (wraps)
-        auto rotIdx = std::make_shared<int>(static_cast<int>(levelData.enemies.size()));
+        auto rotIdx = std::make_shared<int>(static_cast<int>(enemies.size()));
 
         for (auto* ep : enemies)
         {
@@ -377,6 +409,7 @@ static void LoadLevel(int levelNum)
         burgers.push_back(burgerPtr);
         burgerObj->AddComponent(std::move(burgerComp));
         if (playerMove2Ptr) burgerPtr->SetPlayer2(playerMove2Ptr);
+        if (versusEnemyPtr) burgerPtr->SetVersusEnemy(versusEnemyPtr);
         scene.Add(std::move(burgerObj));
     }
 
@@ -403,22 +436,47 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(dbg));
     }
 
-    // Bonus item, spawns at the center of the level
+    // Bonus item — use B marker from level file; fall back to nearest-center platform search
     BonusItemComponent* bonusPtr = nullptr;
     {
-        glm::vec2 bonusPos{
-            transform.WorldX(104.f),   // horizontal center of the 208px-wide sprite
-            transform.WorldY(96.f)     // roughly mid-level vertically
-        };
+        glm::vec2 bonusPos = levelData.bonusPos;
+
+        if (bonusPos.x < 0.f) // no B marker placed yet — find platform nearest level center
+        {
+            const float centerWorldX = transform.WorldX(SPRITE_W * 0.5f);
+            const float centerWorldY = transform.WorldY(SPRITE_H * 0.5f);
+            bonusPos = { centerWorldX, centerWorldY };
+
+            const auto& plats = levelData.map->GetPlatforms();
+            float bestDist = 1e9f;
+            for (const auto& p : plats)
+            {
+                if (p.x0 <= centerWorldX && p.x1 >= centerWorldX)
+                {
+                    float d = std::abs(p.y - centerWorldY);
+                    if (d < bestDist) { bestDist = d; bonusPos = { centerWorldX, p.y }; }
+                }
+            }
+            if (bestDist >= 1e8f)
+            {
+                for (const auto& p : plats)
+                {
+                    float clampedX = std::max(p.x0, std::min(p.x1, centerWorldX));
+                    float dx = clampedX - centerWorldX;
+                    float dy = p.y - centerWorldY;
+                    float d  = dx * dx + dy * dy;
+                    if (d < bestDist) { bestDist = d; bonusPos = { clampedX, p.y }; }
+                }
+            }
+        }
+
         auto bonusObj = std::make_unique<dae::GameObject>();
         // Cycle through 3 bonus sprites: level 1→ice cream, 2→coffee, 3→fries, loops
         const std::string bonusTex = "bt_bonus_" + std::to_string((fileLevel - 1) % 3 + 1) + ".png";
         auto bonusComp = std::make_unique<BonusItemComponent>(
             *bonusObj, bonusPos, charW, playerMovePtr, pepperPtr,
-            /*score*/   500,
-            /*first*/   10.f,
-            /*active*/  10.f,
-            /*respawn*/ 25.f,
+            /*score*/  500,
+            /*active*/ 6.f,
             bonusTex
         );
         bonusPtr = bonusComp.get();
@@ -480,6 +538,11 @@ static void LoadLevel(int levelNum)
         ));
         scene.Add(std::move(watcher));
     }
+
+    // Wire each burger piece to notify the bonus item when it lands in a cup
+    if (bonusPtr)
+        for (auto* burger : burgers)
+            burger->SetOnCupLanded([bonusPtr]() { bonusPtr->OnBurgerInCup(); });
 
     // Wire SoundObserver to all components that fire audio events
     static SoundObserver soundObserver;
