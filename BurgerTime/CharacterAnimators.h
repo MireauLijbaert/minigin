@@ -237,6 +237,14 @@ public:
             return;
         }
 
+        // Squish death animation
+        if (m_versusEnemy && m_versusEnemy->IsDying())
+        {
+            m_anim->SetFlipH(false);
+            m_anim->Play("squish");
+            return;
+        }
+
         // Stunned
         if (m_versusEnemy && m_versusEnemy->IsStunned())
         {
@@ -245,13 +253,7 @@ public:
             return;
         }
 
-        if (!m_player->IsMoving())
-        {
-            m_anim->SetFlipH(false);
-            m_anim->Play("idle");
-            return;
-        }
-
+        // No separate idle — play walk clip for current facing dir (same as AI enemies)
         glm::vec2 dir = m_player->GetFacingDir();
         if (dir.x != 0.f)
         {

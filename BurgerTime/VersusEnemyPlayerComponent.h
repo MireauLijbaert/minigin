@@ -206,13 +206,14 @@ public:
         m_state = VState::ClimbingFromCup;
     }
 
-    bool IsAlive()     const { return m_state == VState::Active
-                                   || m_state == VState::WalkingIn
-                                   || m_state == VState::Entering
-                                   || m_state == VState::ClimbingFromCup; }
-    bool IsStunned()        const { return m_state == VState::Active && m_stunTimer > 0.f; }
-    bool IsEntering()       const { return m_state == VState::Entering || m_state == VState::WalkingIn; }
-    bool IsEnteringRight()  const { return m_enterDir > 0.f; }
+    bool IsAlive()    const { return m_state == VState::Active
+                                  || m_state == VState::WalkingIn
+                                  || m_state == VState::Entering
+                                  || m_state == VState::ClimbingFromCup; }
+    bool IsStunned()  const { return m_state == VState::Active && m_stunTimer > 0.f; }
+    bool IsDying()    const { return false; } // no death anim on VS enemy for now
+    bool IsEntering()        const { return m_state == VState::Entering || m_state == VState::WalkingIn; }
+    bool IsEnteringRight()   const { return m_enterDir > 0.f; }
     bool IsClimbingFromCup() const { return m_state == VState::ClimbingFromCup; }
 
     float GetPosX() const { return m_self ? m_self->GetPosX() : 0.f; }
@@ -238,7 +239,7 @@ private:
 
     static constexpr float HIT_RADIUS_SQ = 12.f * 12.f;
     static constexpr float RESPAWN_DELAY = 4.f;
-    static constexpr float LOCK_ON_LAND  = 0.5f;  // brief freeze when landing on platform
+    static constexpr float LOCK_ON_LAND  = 0.5f;   // brief freeze when landing on platform
 
     void HideAndWait()
     {

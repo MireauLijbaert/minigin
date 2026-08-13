@@ -45,6 +45,18 @@ void PlatformMovementComponent::Kill()
             stagger += 0.5f;
         }
     }
+
+    // Co-op: drag the partner into the same death/respawn cycle (no extra life loss)
+    if (m_partner) m_partner->ForceDeath();
+}
+
+void PlatformMovementComponent::ForceDeath()
+{
+    if (m_state != PlayerState::Alive) return;
+    m_state      = PlayerState::Dying;
+    m_isMoving   = false;
+    m_deathTimer = DEATH_ANIM_DURATION;
+    // No LoseLife(), no event, no enemy reset — the dying partner already handled those
 }
 
 void PlatformMovementComponent::Update()

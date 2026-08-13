@@ -264,6 +264,10 @@ static void LoadLevel(int levelNum)
 
         // Wire sound observer (added later after enemies are set up)
         scene.Add(std::move(p2Obj));
+
+        // Co-op: link partners so both die and respawn together
+        playerMovePtr->SetPartner(playerMove2Ptr);
+        playerMove2Ptr->SetPartner(playerMovePtr);
     }
 
     // Versus: Player 2 replaces the first hotdog enemy.
@@ -298,7 +302,6 @@ static void LoadLevel(int levelNum)
         auto vsObj = std::make_unique<dae::GameObject>();
 
         auto vsAnim = std::make_unique<AnimatedSpriteComponent>(*vsObj, charW, charH);
-        vsAnim->AddClip("idle",    "bt_hotdog.png",          1, 1.f);
         vsAnim->AddClip("walk_h",  "bt_hotdog_walk_h.png",  2, 8.f);
         vsAnim->AddClip("walk_u",  "bt_hotdog_walk_u.png",  2, 8.f);
         vsAnim->AddClip("walk_d",  "bt_hotdog_walk_d.png",  2, 8.f);
@@ -310,14 +313,14 @@ static void LoadLevel(int levelNum)
             *vsObj, levelData.map.get(), vsEntry, charW, charH, transform
         );
         vsMove->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
-        vsMove->SetStepInterval(1.f / 12.f); // ~enemy speed (P1 is 1/60)
+        vsMove->SetStepInterval(1.f / 30.f); // matches L1 AI enemy speed (30 sprite-px/s)
         PlatformMovementComponent* vsMovePtr = vsMove.get();
         vsObj->AddComponent(std::move(vsMove));
 
         auto vsEnemy = std::make_unique<VersusEnemyPlayerComponent>(
             *vsObj, vsMovePtr, playerMovePtr, vsEntry,
             levelData.map.get(),
-            10.f * transform.scaleX,   // same entry speed as AI enemies (SPEED_SPRITE * scaleX)
+            30.f * transform.scaleX,   // same entry speed as AI enemies (SPEED_SPRITE * scaleX)
             2.f  * transform.scaleY    // platform snap threshold
         );
         versusEnemyPtr = vsEnemy.get();
