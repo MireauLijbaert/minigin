@@ -27,7 +27,7 @@ public:
                        PlatformMovementComponent* player,
                        PepperComponent* pepper,
                        int score             = 500,
-                       float activeTime      = 10.f,
+                       float activeTime      = 6.f,
                        const std::string& textureName = "")
         : BaseComponent(owner)
         , m_pos{ worldPos }

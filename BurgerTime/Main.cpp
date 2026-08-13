@@ -330,8 +330,15 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(vsObj));
     }
 
-    // Level-based enemy speed: +10% per level, capped at 2×. Level 1 = 1.0, Level 6 = 1.5, etc.
-    const float levelSpeedMult = std::min(1.f + (levelNum - 1) * 0.1f, 2.f);
+    // Level speed tiers (SPEED_SPRITE = 30 = 0.5× player at 60 sprite-px/s).
+    // Each pair is (base mult, hurry-up mult) — hurry-up triggers once after 75s.
+    //   L1-11:  0.5×-0.67×  mults 1.0  4/3
+    //   L12-23: 0.67×-1.0×  mults 4/3  2.0
+    //   L24+:   1.0×-1.33×  mults 2.0  8/3
+    float levelBaseMult, levelHurryMult;
+    if      (levelNum >= 24) { levelBaseMult = 2.0f;      levelHurryMult = 8.f / 3.f; }
+    else if (levelNum >= 12) { levelBaseMult = 4.f / 3.f; levelHurryMult = 2.0f;      }
+    else                     { levelBaseMult = 1.0f;      levelHurryMult = 4.f / 3.f; }
 
     // Enemies — skip the hotdog slot taken by P2 in Versus mode
     int enemyIdx = 0;
@@ -354,7 +361,7 @@ static void LoadLevel(int levelNum)
             *enemyObj, levelData.map.get(), spawnPos, charW, charH, transform, playerMovePtr, eType
         );
         EnemyComponent* enemyPtr = enemyComp.get();
-        enemyPtr->SetSpeedMultiplier(levelSpeedMult);
+        enemyPtr->SetSpeedMultiplier(levelBaseMult, levelHurryMult);
         enemies.push_back(enemyPtr);
         enemyObj->AddComponent(std::move(enemyComp));
 

@@ -82,9 +82,14 @@ public:
     // Reset() (player death) still uses the original m_spawnPos.
     void SetSpawnCallback(std::function<glm::vec2()> cb) { m_getNextSpawn = std::move(cb); }
 
-    // Applied on top of base speed; call once per enemy after spawning.
-    // 1.0 = normal, 1.5 = 50% faster, etc.
-    void SetSpeedMultiplier(float m) { m_speedMult = m; }
+    // Set the tier speed multipliers (applied on top of SPEED_SPRITE).
+    // base = normal mult for this level, hurryUp = mult after the 75s hurry-up triggers.
+    void SetSpeedMultiplier(float base, float hurryUp)
+    {
+        m_baseMult    = base;
+        m_hurryUpMult = hurryUp;
+        m_speedMult   = base;
+    }
 
     // Co-op: second player to target / collide with
     void SetPlayer2(PlatformMovementComponent* p2) { m_player2 = p2; }
@@ -110,21 +115,23 @@ private:
     float m_stateTimer{ 0.f };
 
     float m_intersectionCooldown{ 0.f };
-    float m_speed;         // recomputed each frame from base * mult * ramp
-    float m_baseSpeed;     // SPEED_SPRITE * scaleX, fixed at construction
-    float m_speedMult{ 1.f };   // set by Main.cpp based on current level number
-    float m_levelTime{ 0.f };   // time in level, drives the in-level speed ramp
+    float m_speed;              // recomputed each frame from base * mult
+    float m_baseSpeed;          // SPEED_SPRITE * scaleX, fixed at construction
+    float m_speedMult{ 1.f };   // current active multiplier (base or hurryUp)
+    float m_baseMult{ 1.f };    // multiplier for this level tier
+    float m_hurryUpMult{ 1.f }; // multiplier after hurry-up triggers
+    float m_hurryUpTimer{ 0.f };// time in level; triggers hurry-up once at HURRY_UP_TIME
+    bool  m_hasHurriedUp{ false };
     float m_platSnap, m_ladrSnap, m_interThresh;
     float m_hitRadiusSq; // collision distance squared for player touch
 
-    static constexpr float SPEED_SPRITE           = 10.f;
+    static constexpr float SPEED_SPRITE           = 30.f;  // 0.5× player (60 sprite-px/s) at level 1
     static constexpr float INTERSECTION_COOLDOWN  = 0.15f;
     static constexpr float STUN_DURATION          = 3.f;
     static constexpr float RESPAWN_DELAY          = 4.f;
     static constexpr float BURGER_RECOVERY_DELAY  = 1.5f;
     static constexpr float SQUISH_ANIM_DURATION   = 0.8f; // 4 frames @ ~5fps
-    static constexpr float RAMP_DURATION          = 60.f; // seconds to reach full in-level ramp
-    static constexpr float RAMP_BONUS             = 0.5f; // +50% speed at peak ramp
+    static constexpr float HURRY_UP_TIME          = 75.f; // seconds until one-time speed boost
 
     bool m_levelClearFrozen{ false };
     std::function<glm::vec2()> m_getNextSpawn;

@@ -106,6 +106,11 @@ void EnemyComponent::Reset(float delay)
     m_posY = m_spawnPos.y;
     m_intersectionCooldown = 0.f;
 
+    // Reset hurry-up so it can trigger again after player death
+    m_speedMult    = m_baseMult;
+    m_hasHurriedUp = false;
+    m_hurryUpTimer = 0.f;
+
     if (delay > 0.f)
     {
         m_stateTimer = delay;
@@ -128,10 +133,17 @@ void EnemyComponent::Update()
 
     float dt = dae::Time::GetInstance().GetDeltaTime();
 
-    // Recompute effective speed: base speed × level multiplier × in-level ramp
-    m_levelTime += dt;
-    const float ramp = std::min(m_levelTime / RAMP_DURATION, 1.f) * RAMP_BONUS;
-    m_speed = m_baseSpeed * m_speedMult * (1.f + ramp);
+    // Recompute effective speed: base speed × level tier × one-time hurry-up
+    if (!m_hasHurriedUp)
+    {
+        m_hurryUpTimer += dt;
+        if (m_hurryUpTimer >= HURRY_UP_TIME)
+        {
+            m_hasHurriedUp = true;
+            m_speedMult = m_hurryUpMult;
+        }
+    }
+    m_speed = m_baseSpeed * m_speedMult;
 
     switch (m_state)
     {
