@@ -67,6 +67,7 @@ enum class GameMode { SinglePlayer, Coop, Versus };
 static GameMode s_gameMode = GameMode::SinglePlayer;
 
 static void LoadNameEntry();
+static void LoadGameOverScreen();
 static void LoadTitleScreen();
 static void LoadLevel(int levelNum);
 
@@ -537,10 +538,17 @@ static void LoadLevel(int levelNum)
             *watcher, playerHealthPtr,
             []()
             {
-                dae::SceneManager::GetInstance().RequestLoad([]()
+                const int score = ScoreManager::GetInstance().GetScore();
+                const auto& entries = HighScoreManager::GetInstance().GetEntries();
+                const bool qualifies = static_cast<int>(entries.size()) < 5
+                                    || score > entries.back().score;
+                dae::SceneManager::GetInstance().RequestLoad([qualifies]()
                 {
                     dae::SceneManager::GetInstance().ClearAll();
-                    LoadNameEntry();
+                    if (qualifies)
+                        LoadNameEntry();
+                    else
+                        LoadGameOverScreen();
                 });
             }
         ));
@@ -697,19 +705,64 @@ static void LoadLevel(int levelNum)
     }
 }
 
+static void LoadGameOverScreen()
+{
+    ScoreManager::GetInstance().Reset();
+    s_currentLives = PLAYER_LIVES;
+
+    auto& scene   = dae::SceneManager::GetInstance().CreateScene();
+    auto bigFont  = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 60);
+    auto smallFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 22);
+
+    // "GAME OVER"
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(290.f, 200.f);
+        auto r = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = r.get();
+        obj->AddComponent(std::move(r));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "GAME OVER", bigFont));
+        scene.Add(std::move(obj));
+    }
+    // "PUSH START TO CONTINUE" blinking
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(295.f, 310.f);
+        auto r = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = r.get();
+        obj->AddComponent(std::move(r));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "PUSH START TO CONTINUE", smallFont);
+        obj->AddComponent(std::move(text));
+        obj->AddComponent(std::make_unique<GameOverScreenComponent>(*obj, []()
+        {
+            dae::SceneManager::GetInstance().RequestLoad([]()
+            {
+                dae::SceneManager::GetInstance().ClearAll();
+                LoadTitleScreen();
+            });
+        }));
+        scene.Add(std::move(obj));
+    }
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->AddComponent(std::make_unique<MuteToggleComponent>(*obj));
+        scene.Add(std::move(obj));
+    }
+}
+
 static void LoadNameEntry()
 {
     const int finalScore = ScoreManager::GetInstance().GetScore();
 
     auto& scene    = dae::SceneManager::GetInstance().CreateScene();
     auto bigFont   = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 48);
-    auto medFont   = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 32);
-    auto gridFont  = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
+    auto gridFont  = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 22);
+    auto tableFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 24);
 
     // "GAME OVER"
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(340.f, 20.f);
+        obj->SetLocalPosition(370.f, 20.f);
         auto r = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = r.get();
         obj->AddComponent(std::move(r));
@@ -717,22 +770,12 @@ static void LoadNameEntry()
         scene.Add(std::move(obj));
     }
 
-    // Score line
+    // Name entry: letter grid + sprite cursor + score table (self-contained)
     {
+        auto snapshot = HighScoreManager::GetInstance().GetEntries(); // copy before new entry added
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(390.f, 52.f);
-        auto r = std::make_unique<dae::RenderComponent>(*obj);
-        dae::RenderComponent* rp = r.get();
-        obj->AddComponent(std::move(r));
-        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp,
-            "SCORE  " + std::to_string(finalScore), medFont));
-        scene.Add(std::move(obj));
-    }
-
-    // Cursor-grid name entry (self-contained: renders name slots + grid + hint)
-    {
-        auto obj = std::make_unique<dae::GameObject>();
-        obj->AddComponent(std::make_unique<NameEntryComponent>(*obj, gridFont, medFont,
+        obj->AddComponent(std::make_unique<NameEntryComponent>(*obj, gridFont, tableFont,
+            finalScore, snapshot,
             [finalScore](const std::string& name)
             {
                 HighScoreManager::GetInstance().AddEntry(name, finalScore);

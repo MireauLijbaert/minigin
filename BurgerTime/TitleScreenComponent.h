@@ -37,6 +37,13 @@ public:
         auto& input    = dae::InputManager::GetInstance();
         const auto* keys = SDL_GetKeyboardState(nullptr);
 
+        // ── Startup delay: ignore all input briefly so held keys don't bleed ──
+        if (m_inputDelay > 0.f)
+        {
+            m_inputDelay -= dt;
+            return;
+        }
+
         // ── Blink prompt ─────────────────────────────────────────────────
         m_blinkTimer -= dt;
         if (m_blinkTimer <= 0.f)
@@ -113,8 +120,9 @@ private:
     bool m_prev1      { false };
     bool m_prev2      { false };
     bool m_prev3      { false };
-    bool m_blinkVisible{ true };
-    float m_blinkTimer { BLINK_INTERVAL };
+    bool  m_blinkVisible{ true };
+    float m_blinkTimer  { BLINK_INTERVAL };
+    float m_inputDelay  { 0.4f }; // ignore input on first load to avoid button bleed
 
     void UpdateLabels()
     {
