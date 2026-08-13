@@ -22,6 +22,9 @@ namespace dae
         // Lose one life and die. Fires LifeChanged with remaining lives.
         void LoseLife();
 
+        // Gain one extra life (1UP). Fires LifeChanged with new count.
+        void GainLife();
+
         int  GetLives()    const { return m_Lives; }
         int  GetMaxLives() const { return m_MaxLives; }
         bool IsAlive()     const { return m_Lives > 0; }

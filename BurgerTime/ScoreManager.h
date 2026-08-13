@@ -17,6 +17,7 @@
 #include "InputManager.h"
 #include "Command.h"
 #include <SDL3/SDL.h>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -40,7 +41,16 @@ public:
             NotifyHiScoreChanged();
         }
         NotifyScoreChanged();
+        // 1UP: one bonus life when crossing 10 000 points
+        if (!m_bonusLifeAwarded && m_score >= 10000)
+        {
+            m_bonusLifeAwarded = true;
+            if (m_bonusLifeCb) m_bonusLifeCb();
+        }
     }
+
+    // Register a callback that fires once when the player reaches 10 000 points.
+    void RegisterBonusLifeCallback(std::function<void()> cb) { m_bonusLifeCb = std::move(cb); }
 
     int  GetScore()   const { return m_score; }
     int  GetHiScore() const { return m_hiScore; }
@@ -48,6 +58,7 @@ public:
     void Reset()
     {
         m_score = 0;
+        m_bonusLifeAwarded = false;
         NotifyScoreChanged();
         // hi-score intentionally survives Reset() persists across games
     }
@@ -70,6 +81,8 @@ private:
     ScoreManager() = default;
     int          m_score  { 0 };
     int          m_hiScore{ 0 };
+    bool         m_bonusLifeAwarded{ false };
+    std::function<void()> m_bonusLifeCb;
     dae::Subject m_subject;
     dae::Subject m_hiSubject;
 

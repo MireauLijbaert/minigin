@@ -237,7 +237,7 @@ private:
     float  m_respawnTimer{ 0.f };
     float  m_lockTimer   { 0.f };
 
-    static constexpr float HIT_RADIUS_SQ = 12.f * 12.f;
+    static constexpr float HIT_RADIUS_SQ = 8.f * 8.f;
     static constexpr float RESPAWN_DELAY = 4.f;
     static constexpr float LOCK_ON_LAND  = 0.5f;   // brief freeze when landing on platform
 

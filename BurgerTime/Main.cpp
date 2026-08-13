@@ -190,6 +190,12 @@ static void LoadLevel(int levelNum)
     playerMove->SetHealthComponent(playerHealthPtr);
     playerMove->SetEnemies(&enemies);
     playerMove->SetGamepad(true, 0);   // P1 uses gamepad 0 (D-pad)
+
+    // 1UP at 10 000 points, grant one bonus life (resets on game restart via ScoreManager::Reset)
+    ScoreManager::GetInstance().RegisterBonusLifeCallback([playerHealthPtr]()
+    {
+        playerHealthPtr->GainLife();
+    });
     PlatformMovementComponent* playerMovePtr = playerMove.get();
     playerObj->AddComponent(std::move(playerMove));
 

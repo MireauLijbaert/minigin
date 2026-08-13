@@ -46,7 +46,8 @@ private:
     int m_currentRow;
     int m_startCol;
     float m_worldCenterX;
-    float m_yTolerance;
+    float m_yTolerance;    // used for enemy catch/squish detection
+    float m_pressYTol;     // tighter tolerance for player-press detection (smaller = more precise)
     float m_maxDrop;
     float m_fallSpeed;
     PlatformMovementComponent* m_player;

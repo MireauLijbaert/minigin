@@ -28,7 +28,7 @@ EnemyComponent::EnemyComponent(dae::GameObject& owner,
     , m_platSnap{ 2.f * transform.scaleY }
     , m_ladrSnap{ 4.f * transform.scaleX }
     , m_interThresh{ 0.5f * transform.scaleX }
-    , m_hitRadiusSq{ (charWorldW * 0.8f) * (charWorldW * 0.8f) }
+    , m_hitRadiusSq{ (charWorldW * 0.5f) * (charWorldW * 0.5f) }
 {
     float px = GetTarget()->GetPosX();
     m_MovementDirection = { (px >= m_posX) ? 1.f : -1.f, 0.f };

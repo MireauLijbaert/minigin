@@ -29,6 +29,7 @@ BurgerPieceComponent::BurgerPieceComponent(dae::GameObject& owner,
     , m_startCol{ startCol }
     , m_worldCenterX{ transform.WorldX(static_cast<float>(GridLadderX(startCol))) }
     , m_yTolerance{ 2.f * transform.scaleY }
+    , m_pressYTol{ 1.f * transform.scaleY }   // tighter than catch tolerance — player must be more precisely on the piece
     , m_maxDrop{ 3.f * transform.scaleY }
     , m_fallSpeed{ 40.f * transform.scaleY }
     , m_player{ player }
@@ -67,7 +68,7 @@ void BurgerPieceComponent::CheckPlayerPress()
         if (!player || !player->IsAlive()) continue;
         float px = player->GetPosX();
         float py = player->GetPosY();
-        if (std::abs(py - m_fallingY) > m_yTolerance) continue;
+        if (std::abs(py - m_fallingY) > m_pressYTol) continue;
         for (int i = 0; i < 4; ++i)
         {
             if (m_pressed[i]) continue;
