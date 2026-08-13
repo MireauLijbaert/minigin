@@ -20,7 +20,7 @@ PlatformMovementComponent::PlatformMovementComponent(dae::GameObject& owner,
     , m_charRenderH{ charWorldH + 2.f * transform.scaleY }
     , m_stepX{ transform.scaleX }
     , m_stepY{ transform.scaleY }
-    , m_platThresh{ 2.f * transform.scaleY }
+    , m_platThresh{ 4.f * transform.scaleY }
     , m_ladrThresh{ 4.f * transform.scaleX }
 {
     SyncPosition();
