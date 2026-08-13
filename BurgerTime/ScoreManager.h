@@ -41,8 +41,8 @@ public:
             NotifyHiScoreChanged();
         }
         NotifyScoreChanged();
-        // 1UP: one bonus life when crossing 10 000 points
-        if (!m_bonusLifeAwarded && m_score >= 10000)
+        // 1UP: one bonus life when crossing 20 000 points
+        if (!m_bonusLifeAwarded && m_score >= 20000)
         {
             m_bonusLifeAwarded = true;
             if (m_bonusLifeCb) m_bonusLifeCb();

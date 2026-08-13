@@ -26,6 +26,7 @@
 #include "GameOverScreenComponent.h"
 #include "BonusItemComponent.h"
 #include "BtSounds.h"
+#include "PauseComponent.h"
 #include "ServiceLocator.h"
 #include "SoundSystem.h"
 #include "SoundObserver.h"
@@ -105,6 +106,7 @@ static void SetupEnemyClips(AnimatedSpriteComponent* anim, EnemyType type)
 static void LoadLevel(int levelNum)
 {
     s_currentLevel = levelNum;
+    dae::Time::GetInstance().SetPaused(false); // clear any leftover pause from previous scene
 
     static LevelData levelData;
     static std::vector<BurgerPieceComponent*> burgers;
@@ -489,11 +491,13 @@ static void LoadLevel(int levelNum)
         }
 
         auto bonusObj = std::make_unique<dae::GameObject>();
-        // Cycle through 3 bonus sprites: level 1→ice cream, 2→coffee, 3→fries, loops
-        const std::string bonusTex = "bt_bonus_" + std::to_string((fileLevel - 1) % 3 + 1) + ".png";
+        // Cycle through 3 bonus sprites + scores: ice cream→500, coffee→1000, fries→1500, loops
+        const int bonusCycle = (fileLevel - 1) % 3; // 0=ice cream, 1=coffee, 2=fries
+        const std::string bonusTex = "bt_bonus_" + std::to_string(bonusCycle + 1) + ".png";
+        const int bonusScore = (bonusCycle + 1) * 500;  // 500 / 1000 / 1500
         auto bonusComp = std::make_unique<BonusItemComponent>(
             *bonusObj, bonusPos, charW, playerMovePtr, pepperPtr,
-            /*score*/  500,
+            /*score*/  bonusScore,
             /*active*/ 6.f,
             bonusTex
         );
@@ -710,6 +714,14 @@ static void LoadLevel(int levelNum)
         dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
         obj->AddComponent(std::make_unique<MuteToggleComponent>(*obj, tp));
+        scene.Add(std::move(obj));
+    }
+
+    // ---- Pause overlay (P / gamepad Start) added last so it renders on top ----
+    {
+        auto pauseFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 60);
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->AddComponent(std::make_unique<PauseComponent>(*obj, pauseFont, smallFont));
         scene.Add(std::move(obj));
     }
 }
