@@ -179,6 +179,9 @@ void BurgerPieceComponent::PushDown()
 
 void BurgerPieceComponent::OnLanded()
 {
+    // 50 points each time a burger piece lands on a floor
+    ScoreManager::GetInstance().AddScore(50);
+
     m_currentRow = m_targetRow;
     m_fallingY = m_targetY;
 
