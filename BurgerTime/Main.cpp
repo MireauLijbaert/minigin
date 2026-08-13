@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <cstdio>
 
 #if _DEBUG && __has_include(<vld.h>)
 #include <vld.h>
@@ -760,14 +761,14 @@ static void LoadTitleScreen()
 {
     auto& scene = dae::SceneManager::GetInstance().CreateScene();
 
-    auto titleFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 72);
-    auto medFont   = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 28);
+    auto titleFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 60);
+    auto medFont   = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 26);
     auto smallFont = dae::ResourceManager::GetInstance().LoadFont("Lingua.otf", 20);
 
-    // "BURGER TIME" title
+    // ── "BURGER TIME" ────────────────────────────────────────────────────
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(240.f, 150.f);
+        obj->SetLocalPosition(230.f, 40.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
@@ -775,75 +776,126 @@ static void LoadTitleScreen()
         scene.Add(std::move(obj));
     }
 
-    // "HI-SCORE" label
+    // ── "BEST FIVE PLAYERS" ──────────────────────────────────────────────
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(454.f, 288.f);
+        obj->SetLocalPosition(310.f, 135.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "HI-SCORE", smallFont));
+        obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, "BEST FIVE PLAYERS", smallFont));
         scene.Add(std::move(obj));
     }
 
-    // Hi-score value (live-updating)
+    // ── Top-5 score table ────────────────────────────────────────────────
+    {
+        const auto& entries = HighScoreManager::GetInstance().GetEntries();
+        for (int i = 0; i < 5; ++i)
+        {
+            char buf[64];
+            if (i < static_cast<int>(entries.size()))
+                std::snprintf(buf, sizeof(buf), "%d  %-3s   %6d PTS",
+                    i + 1, entries[i].name.c_str(), entries[i].score);
+            else
+                std::snprintf(buf, sizeof(buf), "%d  ---         --- PTS", i + 1);
+
+            auto obj = std::make_unique<dae::GameObject>();
+            obj->SetLocalPosition(270.f, 170.f + static_cast<float>(i) * 30.f);
+            auto render = std::make_unique<dae::RenderComponent>(*obj);
+            dae::RenderComponent* rp = render.get();
+            obj->AddComponent(std::move(render));
+            obj->AddComponent(std::make_unique<dae::TextComponent>(*obj, rp, buf, smallFont));
+            scene.Add(std::move(obj));
+        }
+    }
+
+    // ── Mode selector (3 options, joystick-navigable) ────────────────────
+    auto start1P = []()
+    {
+        s_gameMode     = GameMode::SinglePlayer;
+        s_currentLives = PLAYER_LIVES;
+        dae::SceneManager::GetInstance().RequestLoad([]()
+        {
+            dae::SceneManager::GetInstance().ClearAll();
+            LoadLevel(1);
+        });
+    };
+    auto start2P = []()
+    {
+        s_gameMode     = GameMode::Coop;
+        s_currentLives = PLAYER_LIVES;
+        dae::SceneManager::GetInstance().RequestLoad([]()
+        {
+            dae::SceneManager::GetInstance().ClearAll();
+            LoadLevel(1);
+        });
+    };
+    auto startVS = []()
+    {
+        s_gameMode     = GameMode::Versus;
+        s_currentLives = PLAYER_LIVES;
+        dae::SceneManager::GetInstance().RequestLoad([]()
+        {
+            dae::SceneManager::GetInstance().ClearAll();
+            LoadLevel(1);
+        });
+    };
+
+    dae::TextComponent* opt1Ptr   = nullptr;
+    dae::TextComponent* opt2Ptr   = nullptr;
+    dae::TextComponent* opt3Ptr   = nullptr;
+    dae::TextComponent* promptPtr = nullptr;
+
+    // Option 1: 1 PLAYER
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(468.f, 316.f);
+        obj->SetLocalPosition(390.f, 370.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, rp,
-            std::to_string(ScoreManager::GetInstance().GetHiScore()), medFont);
-        dae::TextComponent* tp = text.get();
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "> 1 PLAYER", medFont);
+        opt1Ptr = text.get();
         obj->AddComponent(std::move(text));
-        obj->AddComponent(std::make_unique<HiScoreDisplayComponent>(*obj, tp));
+        scene.Add(std::move(obj));
+    }
+    // Option 2: CO-OP
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(390.f, 405.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "  CO-OP", medFont);
+        opt2Ptr = text.get();
+        obj->AddComponent(std::move(text));
+        scene.Add(std::move(obj));
+    }
+    // Option 3: VS
+    {
+        auto obj = std::make_unique<dae::GameObject>();
+        obj->SetLocalPosition(390.f, 440.f);
+        auto render = std::make_unique<dae::RenderComponent>(*obj);
+        dae::RenderComponent* rp = render.get();
+        obj->AddComponent(std::move(render));
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "  VS", medFont);
+        opt3Ptr = text.get();
+        obj->AddComponent(std::move(text));
         scene.Add(std::move(obj));
     }
 
-    // "PRESS ENTER TO START" blinking prompt
+    // Blinking prompt + TitleScreenComponent (owns all input logic)
     {
         auto obj = std::make_unique<dae::GameObject>();
-        obj->SetLocalPosition(0.f, 0.f);
+        obj->SetLocalPosition(300.f, 530.f);
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "PRESS ENTER TO START", smallFont);
-        dae::TextComponent* tp = text.get();
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "PUSH START  /  A TO SELECT", smallFont);
+        promptPtr = text.get();
         obj->AddComponent(std::move(text));
-        auto start1P = []()
-        {
-            s_gameMode     = GameMode::SinglePlayer;
-            s_currentLives = PLAYER_LIVES;
-            dae::SceneManager::GetInstance().RequestLoad([]()
-            {
-                dae::SceneManager::GetInstance().ClearAll();
-                LoadLevel(1);
-            });
-        };
-        auto start2P = []()
-        {
-            s_gameMode     = GameMode::Coop;
-            s_currentLives = PLAYER_LIVES;
-            dae::SceneManager::GetInstance().RequestLoad([]()
-            {
-                dae::SceneManager::GetInstance().ClearAll();
-                LoadLevel(1);
-            });
-        };
-        auto startVS = []()
-        {
-            s_gameMode     = GameMode::Versus;
-            s_currentLives = PLAYER_LIVES;
-            dae::SceneManager::GetInstance().RequestLoad([]()
-            {
-                dae::SceneManager::GetInstance().ClearAll();
-                LoadLevel(1);
-            });
-        };
-        obj->AddComponent(std::make_unique<TitleScreenComponent>(*obj, tp,
+        obj->AddComponent(std::make_unique<TitleScreenComponent>(
+            *obj, opt1Ptr, opt2Ptr, opt3Ptr, promptPtr,
             std::move(start1P), std::move(start2P), std::move(startVS)));
-        obj->SetLocalPosition(350.f, 430.f);
         scene.Add(std::move(obj));
     }
 
