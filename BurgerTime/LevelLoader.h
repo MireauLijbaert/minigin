@@ -52,5 +52,12 @@ struct LevelData
 class LevelLoader
 {
 public:
+    static constexpr int MAX_LEVEL = 6; // number of unique map files; levels cycle after this
+
+    // Load by logical level number: handles file cycling (7+ reuses 1-6 maps)
+    // and applies fixed enemy composition for levels beyond MAX_LEVEL.
+    static LevelData Load(int levelNum, const LevelTransform& transform);
+
+    // Low-level: load directly from a file path.
     static LevelData Load(const std::string& filePath, const LevelTransform& transform);
 };

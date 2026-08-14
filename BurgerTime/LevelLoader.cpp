@@ -4,6 +4,33 @@
 #include <sstream>
 #include <cassert>
 
+LevelData LevelLoader::Load(int levelNum, const LevelTransform& transform)
+{
+    const int fileLevel = ((levelNum - 1) % MAX_LEVEL) + 1;
+    LevelData data = Load("Data/bt_level" + std::to_string(fileLevel) + ".txt", transform);
+
+    // From level 7 onwards: fixed enemy composition K E H K E H (same as level 6)
+    if (levelNum > MAX_LEVEL)
+    {
+        static constexpr int   fixedTypes[]  = { 2, 1, 0, 2, 1, 0 }; // K E H K E H
+        static constexpr float fixedDelays[] = { 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f };
+        const int spawnCount = static_cast<int>(data.spawnPoints.size());
+        data.enemies.clear();
+        for (int i = 0; i < 6 && spawnCount > 0; ++i)
+        {
+            const auto& sp = data.spawnPoints[i % spawnCount];
+            EnemySpawnDef def{};
+            def.type   = fixedTypes[i];
+            def.spawnX = sp.x;
+            def.spawnY = sp.y;
+            def.delay  = fixedDelays[i];
+            data.enemies.push_back(def);
+        }
+    }
+
+    return data;
+}
+
 LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& transform)
 {
     std::ifstream file(filePath);

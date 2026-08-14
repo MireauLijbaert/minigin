@@ -59,7 +59,6 @@ static constexpr float CHAR_SPRITE_W = 16.f;
 static constexpr float CHAR_SPRITE_H = 16.f;
 
 static constexpr int PLAYER_LIVES = 3;
-static constexpr int MAX_LEVEL    = 6;
 
 static int s_currentLevel = 1;
 static int s_currentLives = PLAYER_LIVES;
@@ -89,28 +88,8 @@ static void LoadLevel(int levelNum)
     const float charW = CHAR_SPRITE_W * scaleX;
     const float charH = CHAR_SPRITE_H * scaleY;
 
-    // Levels 7+ use the same map layouts as 1–6 (cycling) but with fixed enemy composition
-    const int fileLevel = ((levelNum - 1) % MAX_LEVEL) + 1;
-    levelData = LevelLoader::Load("Data/bt_level" + std::to_string(fileLevel) + ".txt", transform);
-
-    // From level 7 onwards enemies are always: K E H K E H (same as level 6)
-    if (levelNum > MAX_LEVEL)
-    {
-        static const int   fixedTypes[]  = { 2, 1, 0, 2, 1, 0 }; // K E H K E H
-        static const float fixedDelays[] = { 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f };
-        int spawnCount = static_cast<int>(levelData.spawnPoints.size());
-        levelData.enemies.clear();
-        for (int i = 0; i < 6 && spawnCount > 0; ++i)
-        {
-            const auto& sp = levelData.spawnPoints[i % spawnCount];
-            EnemySpawnDef def{};
-            def.type   = fixedTypes[i];
-            def.spawnX = sp.x;
-            def.spawnY = sp.y;
-            def.delay  = fixedDelays[i];
-            levelData.enemies.push_back(def);
-        }
-    }
+    levelData = LevelLoader::Load(levelNum, transform);
+    const int fileLevel = ((levelNum - 1) % LevelLoader::MAX_LEVEL) + 1; // still needed for bg texture name
 
     // Configure popup scale to match character size in screen coords.
     ScorePopupManager::GetInstance().SetDisplaySize(charW, charH);
