@@ -47,11 +47,8 @@ namespace fs = std::filesystem;
 static constexpr float TOP_MARGIN    = 50.f;
 static constexpr float BOTTOM_MARGIN = 20.f;
 
-static constexpr float SPRITE_W = 208.f;
-static constexpr float SPRITE_H = 187.f;
-
 static constexpr float LEVEL_DST_H    = 576.f - TOP_MARGIN - BOTTOM_MARGIN;
-static constexpr float LEVEL_DST_W    = SPRITE_W * (LEVEL_DST_H / SPRITE_H);
+static constexpr float LEVEL_DST_W    = LevelLoader::SPRITE_W * (LEVEL_DST_H / LevelLoader::SPRITE_H);
 static constexpr float LEVEL_OFFSET_X = (1024.f - LEVEL_DST_W) * 0.5f;
 static constexpr float LEVEL_OFFSET_Y = TOP_MARGIN;
 
@@ -82,8 +79,8 @@ static void LoadLevel(int levelNum)
     burgers.clear();
     enemies.clear();
 
-    const float scaleX = LEVEL_DST_W / SPRITE_W;
-    const float scaleY = LEVEL_DST_H / SPRITE_H;
+    const float scaleX = LEVEL_DST_W / LevelLoader::SPRITE_W;
+    const float scaleY = LEVEL_DST_H / LevelLoader::SPRITE_H;
     const LevelTransform transform{ scaleX, scaleY, LEVEL_OFFSET_X, LEVEL_OFFSET_Y };
     const float charW = CHAR_SPRITE_W * scaleX;
     const float charH = CHAR_SPRITE_H * scaleY;
@@ -405,39 +402,10 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(dbg));
     }
 
-    // Bonus item — use B marker from level file; fall back to nearest-center platform search
+    // Bonus item — position guaranteed by LevelLoader (B marker or nearest-platform fallback)
     BonusItemComponent* bonusPtr = nullptr;
     {
-        glm::vec2 bonusPos = levelData.bonusPos;
-
-        if (bonusPos.x < 0.f) // no B marker placed yet — find platform nearest level center
-        {
-            const float centerWorldX = transform.WorldX(SPRITE_W * 0.5f);
-            const float centerWorldY = transform.WorldY(SPRITE_H * 0.5f);
-            bonusPos = { centerWorldX, centerWorldY };
-
-            const auto& plats = levelData.map->GetPlatforms();
-            float bestDist = 1e9f;
-            for (const auto& p : plats)
-            {
-                if (p.x0 <= centerWorldX && p.x1 >= centerWorldX)
-                {
-                    float d = std::abs(p.y - centerWorldY);
-                    if (d < bestDist) { bestDist = d; bonusPos = { centerWorldX, p.y }; }
-                }
-            }
-            if (bestDist >= 1e8f)
-            {
-                for (const auto& p : plats)
-                {
-                    float clampedX = std::max(p.x0, std::min(p.x1, centerWorldX));
-                    float dx = clampedX - centerWorldX;
-                    float dy = p.y - centerWorldY;
-                    float d  = dx * dx + dy * dy;
-                    if (d < bestDist) { bestDist = d; bonusPos = { clampedX, p.y }; }
-                }
-            }
-        }
+        const glm::vec2 bonusPos = levelData.bonusPos;
 
         auto bonusObj = std::make_unique<dae::GameObject>();
         // Cycle through 3 bonus sprites + scores: ice cream→500, coffee→1000, fries→1500, loops
@@ -467,7 +435,7 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(bonusObj));
     }
 
-    // Level completion (N to skip, auto on all burgers in cups)
+    // Level completion (F1 to skip, auto on all burgers in cups)
     LevelManagerComponent* mgrPtr = nullptr;
     {
         auto mgr = std::make_unique<dae::GameObject>();
@@ -663,7 +631,7 @@ static void LoadLevel(int levelNum)
         scene.Add(std::move(obj));
     }
 
-    // ---- Mute toggle (M key) bottom of right panel ----
+    // ---- Mute toggle (F2) bottom of right panel ----
     {
         auto obj = std::make_unique<dae::GameObject>();
         const float muteY = LEVEL_OFFSET_Y + LEVEL_DST_H - 20.f;
@@ -671,7 +639,7 @@ static void LoadLevel(int levelNum)
         auto render = std::make_unique<dae::RenderComponent>(*obj);
         dae::RenderComponent* rp = render.get();
         obj->AddComponent(std::move(render));
-        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "[M] SOUND", smallFont);
+        auto text = std::make_unique<dae::TextComponent>(*obj, rp, "[F2] SOUND", smallFont);
         dae::TextComponent* tp = text.get();
         obj->AddComponent(std::move(text));
         obj->AddComponent(std::make_unique<MuteToggleComponent>(*obj, tp));

@@ -9,6 +9,38 @@ LevelData LevelLoader::Load(int levelNum, const LevelTransform& transform)
     const int fileLevel = ((levelNum - 1) % MAX_LEVEL) + 1;
     LevelData data = Load("Data/bt_level" + std::to_string(fileLevel) + ".txt", transform);
 
+    // If no B marker was placed in the file, find the platform nearest the level centre.
+    if (data.bonusPos.x < 0.f)
+    {
+        const float cx = transform.WorldX(SPRITE_W * 0.5f);
+        const float cy = transform.WorldY(SPRITE_H * 0.5f);
+        data.bonusPos = { cx, cy }; // fallback if nothing better is found
+
+        const auto& plats = data.map->GetPlatforms();
+        float bestDist = 1e9f;
+
+        // Prefer a platform whose horizontal span covers the centre column
+        for (const auto& p : plats)
+        {
+            if (p.x0 <= cx && p.x1 >= cx)
+            {
+                float d = std::abs(p.y - cy);
+                if (d < bestDist) { bestDist = d; data.bonusPos = { cx, p.y }; }
+            }
+        }
+        // Fall back to nearest platform by 2-D distance
+        if (bestDist >= 1e8f)
+        {
+            for (const auto& p : plats)
+            {
+                float clampedX = std::max(p.x0, std::min(p.x1, cx));
+                float dx = clampedX - cx, dy = p.y - cy;
+                float d  = dx * dx + dy * dy;
+                if (d < bestDist) { bestDist = d; data.bonusPos = { clampedX, p.y }; }
+            }
+        }
+    }
+
     // From level 7 onwards: fixed enemy composition K E H K E H (same as level 6)
     if (levelNum > MAX_LEVEL)
     {

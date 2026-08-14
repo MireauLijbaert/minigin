@@ -52,7 +52,9 @@ struct LevelData
 class LevelLoader
 {
 public:
-    static constexpr int MAX_LEVEL = 6; // number of unique map files; levels cycle after this
+    static constexpr int   MAX_LEVEL = 6;    // number of unique map files; levels cycle after this
+    static constexpr float SPRITE_W  = 208.f; // native pixel width of a level background sprite
+    static constexpr float SPRITE_H  = 187.f; // native pixel height of a level background sprite
 
     // Load by logical level number: handles file cycling (7+ reuses 1-6 maps)
     // and applies fixed enemy composition for levels beyond MAX_LEVEL.
