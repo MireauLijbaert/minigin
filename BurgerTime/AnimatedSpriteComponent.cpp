@@ -1,16 +1,12 @@
 #include "AnimatedSpriteComponent.h"
 #include "ResourceManager.h"
-#include "Renderer.h"
-#include "GameObject.h"
 #include "TimeSingleton.h"
-#include <SDL3/SDL.h>
 #include <algorithm>
 
 AnimatedSpriteComponent::AnimatedSpriteComponent(dae::GameObject& owner,
-                                                 float renderW, float renderH)
+                                                 dae::RenderComponent* renderComp)
     : BaseComponent(owner)
-    , m_renderW{ renderW }
-    , m_renderH{ renderH }
+    , m_renderComp{ renderComp }
 {}
 
 void AnimatedSpriteComponent::AddClip(const std::string& name, const std::string& texFile,
@@ -29,6 +25,7 @@ void AnimatedSpriteComponent::AddClip(const std::string& name, const std::string
         m_current    = name;
         m_frameIndex = 0;
         m_frameTimer = 0.f;
+        SyncRenderComp();
     }
 }
 
@@ -42,12 +39,13 @@ bool AnimatedSpriteComponent::IsClipFinished() const
 
 void AnimatedSpriteComponent::Play(const std::string& name)
 {
-    m_paused = false; // switching clips always resumes
+    m_paused = false;
     if (name == m_current) return;
     if (m_clips.find(name) == m_clips.end()) return;
     m_current    = name;
     m_frameIndex = 0;
     m_frameTimer = 0.f;
+    SyncRenderComp();
 }
 
 void AnimatedSpriteComponent::Update()
@@ -63,6 +61,7 @@ void AnimatedSpriteComponent::Update()
     const float dt = dae::Time::GetInstance().GetDeltaTime();
     m_frameTimer += dt;
     const float frameDur = 1.f / clip.fps;
+    bool advanced = false;
     while (m_frameTimer >= frameDur)
     {
         m_frameTimer -= frameDur;
@@ -70,41 +69,26 @@ void AnimatedSpriteComponent::Update()
             m_frameIndex = (m_frameIndex + 1) % clip.frameCount;
         else
             m_frameIndex = std::min(m_frameIndex + 1, clip.frameCount - 1);
+        advanced = true;
     }
+    if (advanced) SyncRenderComp();
 }
 
-void AnimatedSpriteComponent::Render()
+void AnimatedSpriteComponent::SyncRenderComp()
 {
-    if (m_current.empty()) return;
+    if (!m_renderComp) return;
     auto it = m_clips.find(m_current);
     if (it == m_clips.end()) return;
 
     const AnimClip& clip = it->second;
     if (!clip.texture) return;
 
-    SDL_Texture* tex = clip.texture->GetSDLTexture();
-    if (!tex) return;
+    m_renderComp->SetTexture(clip.texture);
 
-    // Source rect: one frame from the horizontal strip
-    glm::vec2 texSize = clip.texture->GetSize();
-    float frameW = texSize.x / static_cast<float>(clip.frameCount);
-    SDL_FRect src{
-        static_cast<float>(m_frameIndex) * frameW,
-        0.f,
-        frameW,
-        texSize.y
-    };
-
-    // Destination rect: owner world position
-    const auto& pos = GetOwner()->GetWorldPosition().GetPosition();
-    SDL_FRect dst{ pos.x, pos.y, m_renderW, m_renderH };
-
-    SDL_Renderer* renderer = dae::Renderer::GetInstance().GetSDLRenderer();
-
-    SDL_SetTextureColorMod(tex, m_r, m_g, m_b);
-    if (m_flipH)
-        SDL_RenderTextureRotated(renderer, tex, &src, &dst, 0.0, nullptr, SDL_FLIP_HORIZONTAL);
-    else
-        SDL_RenderTexture(renderer, tex, &src, &dst);
-    SDL_SetTextureColorMod(tex, 255, 255, 255); // restore
+    const float totalW = clip.texture->GetSize().x;
+    const float frameW = totalW / static_cast<float>(clip.frameCount);
+    const float frameH = clip.texture->GetSize().y;
+    m_renderComp->SetSourceRect(
+        static_cast<float>(m_frameIndex) * frameW, 0.f,
+        frameW, frameH);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseComponent.h"
+#include "RenderComponent.h"
 #include "Texture2D.h"
 #include <memory>
 #include <string>
@@ -13,12 +14,13 @@ struct AnimClip
     bool  loop{ true };
 };
 
-// Renders one frame at a time from a horizontal sprite strip.
-// Supports optional horizontal flip for left-facing sprites.
+// Drives a RenderComponent with per-frame source rects from a sprite strip.
+// The RenderComponent owns the draw call; this component owns the animation logic.
 class AnimatedSpriteComponent : public dae::BaseComponent
 {
 public:
-    AnimatedSpriteComponent(dae::GameObject& owner, float renderW, float renderH);
+    // renderComp must already be added to the same GameObject with SetSize() called.
+    AnimatedSpriteComponent(dae::GameObject& owner, dae::RenderComponent* renderComp);
 
     // Register a clip; texFile is a horizontal strip with frameCount equally-wide frames.
     void AddClip(const std::string& name, const std::string& texFile,
@@ -32,25 +34,29 @@ public:
     void Pause()  { m_paused = true; }
     void Resume() { m_paused = false; }
 
-    // Flip the rendered sprite horizontally (for left-facing variants).
-    void SetFlipH(bool flip) { m_flipH = flip; }
+    // Flip the rendered sprite horizontally — forwarded to the RenderComponent.
+    void SetFlipH(bool flip) { if (m_renderComp) m_renderComp->SetFlipH(flip); }
 
-    // Optional RGB color modulation (255,255,255 = no tint).
-    void SetColorMod(uint8_t r, uint8_t g, uint8_t b) { m_r = r; m_g = g; m_b = b; }
+    // Optional RGB tint — forwarded to the RenderComponent.
+    void SetColorMod(uint8_t r, uint8_t g, uint8_t b)
+    {
+        if (m_renderComp) m_renderComp->SetColorMod(r, g, b);
+    }
 
     // True when the current clip is non-looping and has reached its last frame.
     bool IsClipFinished() const;
 
     void Update() override;
-    void Render() override;
+    void Render() override {} // RenderComponent handles drawing
 
 private:
+    dae::RenderComponent* m_renderComp;
     std::unordered_map<std::string, AnimClip> m_clips;
     std::string m_current;
     int   m_frameIndex{ 0 };
     float m_frameTimer{ 0.f };
-    float m_renderW, m_renderH;
-    bool    m_flipH{ false };
-    bool    m_paused{ false };
-    uint8_t m_r{ 255 }, m_g{ 255 }, m_b{ 255 };
+    bool  m_paused{ false };
+
+    // Push the current clip/frame into the RenderComponent.
+    void SyncRenderComp();
 };

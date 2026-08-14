@@ -167,7 +167,12 @@ static void LoadLevel(int levelNum)
     // Player
     auto playerObj = std::make_unique<dae::GameObject>();
 
-    auto playerAnim = std::make_unique<AnimatedSpriteComponent>(*playerObj, charW, charH);
+    auto playerRender = std::make_unique<dae::RenderComponent>(*playerObj);
+    playerRender->SetSize(charW, charH);
+    dae::RenderComponent* playerRenderPtr = playerRender.get();
+    playerObj->AddComponent(std::move(playerRender));
+
+    auto playerAnim = std::make_unique<AnimatedSpriteComponent>(*playerObj, playerRenderPtr);
     playerAnim->AddClip("idle",     "bt_player_idle.png",     1, 1.f);          // standing still (front-facing)
     playerAnim->AddClip("idle_u",   "bt_player_idle_u.png",   1, 1.f);          // standing still (back-turned, after moving up)
     playerAnim->AddClip("walk_h",   "bt_player_walk_l.png",   3, 8.f);          // sideways, base=LEFT, flip for RIGHT
@@ -228,7 +233,12 @@ static void LoadLevel(int levelNum)
     {
         auto p2Obj = std::make_unique<dae::GameObject>();
 
-        auto p2Anim = std::make_unique<AnimatedSpriteComponent>(*p2Obj, charW, charH);
+        auto p2Render = std::make_unique<dae::RenderComponent>(*p2Obj);
+        p2Render->SetSize(charW, charH);
+        dae::RenderComponent* p2RenderPtr = p2Render.get();
+        p2Obj->AddComponent(std::move(p2Render));
+
+        auto p2Anim = std::make_unique<AnimatedSpriteComponent>(*p2Obj, p2RenderPtr);
         p2Anim->AddClip("idle",      "bt_player_idle.png",       1, 1.f);
         p2Anim->AddClip("idle_u",    "bt_player_idle_u.png",     1, 1.f);
         p2Anim->AddClip("walk_h",    "bt_player_walk_l.png",     3, 8.f);
@@ -309,7 +319,12 @@ static void LoadLevel(int levelNum)
 
         auto vsObj = std::make_unique<dae::GameObject>();
 
-        auto vsAnim = std::make_unique<AnimatedSpriteComponent>(*vsObj, charW, charH);
+        auto vsRender = std::make_unique<dae::RenderComponent>(*vsObj);
+        vsRender->SetSize(charW, charH);
+        dae::RenderComponent* vsRenderPtr = vsRender.get();
+        vsObj->AddComponent(std::move(vsRender));
+
+        auto vsAnim = std::make_unique<AnimatedSpriteComponent>(*vsObj, vsRenderPtr);
         vsAnim->AddClip("walk_h",  "bt_hotdog_walk_h.png",  2, 8.f);
         vsAnim->AddClip("walk_u",  "bt_hotdog_walk_u.png",  2, 8.f);
         vsAnim->AddClip("walk_d",  "bt_hotdog_walk_d.png",  2, 8.f);
@@ -365,7 +380,12 @@ static void LoadLevel(int levelNum)
         auto enemyObj  = std::make_unique<dae::GameObject>();
 
         // Animated sprite
-        auto enemyAnim = std::make_unique<AnimatedSpriteComponent>(*enemyObj, charW, charH);
+        auto enemyRender = std::make_unique<dae::RenderComponent>(*enemyObj);
+        enemyRender->SetSize(charW, charH);
+        dae::RenderComponent* enemyRenderPtr = enemyRender.get();
+        enemyObj->AddComponent(std::move(enemyRender));
+
+        auto enemyAnim = std::make_unique<AnimatedSpriteComponent>(*enemyObj, enemyRenderPtr);
         SetupEnemyClips(enemyAnim.get(), eType);
         AnimatedSpriteComponent* enemyAnimPtr = enemyAnim.get();
         enemyObj->AddComponent(std::move(enemyAnim));
