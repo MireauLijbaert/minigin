@@ -56,6 +56,7 @@ public:
 
         // ── Navigate up ──────────────────────────────────────────────────
         const bool navUp = keys[SDL_SCANCODE_UP] != 0
+                        || keys[SDL_SCANCODE_W]  != 0
                         || input.IsGamepadButtonHeld(dae::GamepadButton::DPadUp, 0);
         if (navUp && !m_prevUp)
         {
@@ -66,6 +67,7 @@ public:
 
         // ── Navigate down ────────────────────────────────────────────────
         const bool navDown = keys[SDL_SCANCODE_DOWN] != 0
+                          || keys[SDL_SCANCODE_S]    != 0
                           || input.IsGamepadButtonHeld(dae::GamepadButton::DPadDown, 0);
         if (navDown && !m_prevDown)
         {

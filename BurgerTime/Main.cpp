@@ -55,7 +55,7 @@ static constexpr float LEVEL_OFFSET_Y = TOP_MARGIN;
 static constexpr float CHAR_SPRITE_W = 16.f;
 static constexpr float CHAR_SPRITE_H = 16.f;
 
-static constexpr int PLAYER_LIVES = 3;
+static constexpr int PLAYER_LIVES = 4;
 
 static int s_currentLevel = 1;
 static int s_currentLives = PLAYER_LIVES;
@@ -133,7 +133,7 @@ static void LoadLevel(int levelNum)
     playerMove->SetEnemies(&enemies);
     playerMove->SetGamepad(true, 0);   // P1 uses gamepad 0 (D-pad)
 
-    // 1UP at 10 000 points, grant one bonus life (resets on game restart via ScoreManager::Reset)
+    // 1UP at 20 000 points, grant one bonus life (resets on game restart via ScoreManager::Reset)
     ScoreManager::GetInstance().RegisterBonusLifeCallback([playerHealthPtr]()
     {
         playerHealthPtr->GainLife();
@@ -187,6 +187,7 @@ static void LoadLevel(int levelNum)
         p2Move->SetHealthComponent(playerHealthPtr);
         p2Move->SetEnemies(&enemies);
         p2Move->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
+        p2Move->SetGamepad(true, 1);    // P2 can also use gamepad 1
         playerMove2Ptr = p2Move.get();
         p2Obj->AddComponent(std::move(p2Move));
 
@@ -194,6 +195,7 @@ static void LoadLevel(int levelNum)
             *p2Obj, playerMove2Ptr, &enemies, charW, charH, 5
         );
         p2Pepper->SetFireKey(SDL_SCANCODE_COMMA);
+        p2Pepper->SetGamepad(true, 1);  // P2 gamepad 1 Y = pepper
         PepperComponent* p2PepperPtr = p2Pepper.get();
         p2Obj->AddComponent(std::move(p2Pepper));
 
@@ -262,6 +264,7 @@ static void LoadLevel(int levelNum)
             *vsObj, levelData.map.get(), vsEntry, charW, charH, transform
         );
         vsMove->SetKeys({ SDL_SCANCODE_I, SDL_SCANCODE_K, SDL_SCANCODE_J, SDL_SCANCODE_L });
+        vsMove->SetGamepad(true, 1);    // P2 can also use gamepad 1
         vsMove->SetStepInterval(1.f / 30.f); // matches L1 AI enemy speed (30 sprite-px/s)
         PlatformMovementComponent* vsMovePtr = vsMove.get();
         vsObj->AddComponent(std::move(vsMove));

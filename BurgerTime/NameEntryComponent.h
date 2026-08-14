@@ -55,10 +55,10 @@ public:
             return hit;
         };
 
-        if (edge(keys[SDL_SCANCODE_LEFT]  || input.IsGamepadButtonHeld(dae::GamepadButton::DPadLeft,  0), m_prevL)) MoveLeft();
-        if (edge(keys[SDL_SCANCODE_RIGHT] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadRight, 0), m_prevR)) MoveRight();
-        if (edge(keys[SDL_SCANCODE_UP]    || input.IsGamepadButtonHeld(dae::GamepadButton::DPadUp,    0), m_prevU)) MoveUp();
-        if (edge(keys[SDL_SCANCODE_DOWN]  || input.IsGamepadButtonHeld(dae::GamepadButton::DPadDown,  0), m_prevD)) MoveDown();
+        if (edge(keys[SDL_SCANCODE_LEFT]  || keys[SDL_SCANCODE_A] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadLeft,  0), m_prevL)) MoveLeft();
+        if (edge(keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadRight, 0), m_prevR)) MoveRight();
+        if (edge(keys[SDL_SCANCODE_UP]    || keys[SDL_SCANCODE_W] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadUp,    0), m_prevU)) MoveUp();
+        if (edge(keys[SDL_SCANCODE_DOWN]  || keys[SDL_SCANCODE_S] || input.IsGamepadButtonHeld(dae::GamepadButton::DPadDown,  0), m_prevD)) MoveDown();
 
         bool selDown = keys[SDL_SCANCODE_RETURN] != 0
                     || keys[SDL_SCANCODE_SPACE]  != 0

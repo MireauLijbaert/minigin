@@ -65,9 +65,9 @@ public:
         // Stop player movement for the duration of the delay
         // (matches LevelManagerComponent::COMPLETE_DELAY = 3.5f)
         if (m_playerMove)
-            m_playerMove->FreezeFor(3.5f);
+            m_playerMove->FreezeFor(LevelManagerComponent::COMPLETE_DELAY);
         if (m_playerMove2)
-            m_playerMove2->FreezeFor(3.5f);
+            m_playerMove2->FreezeFor(LevelManagerComponent::COMPLETE_DELAY);
 
         // Switch player(s) to celebrate animation
         if (m_playerAnim)

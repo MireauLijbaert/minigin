@@ -14,6 +14,8 @@
 class LevelManagerComponent : public dae::BaseComponent
 {
 public:
+    static constexpr float COMPLETE_DELAY = 3.5f;
+
     dae::Subject& GetSubject() { return m_subject; }
     LevelManagerComponent(dae::GameObject& owner,
                           std::vector<BurgerPieceComponent*>* burgers,
@@ -35,6 +37,16 @@ public:
             }),
             dae::InputState::Up
         );
+    }
+
+    // Overwrite the F1 binding with a no-op on destruction so the InputManager
+    // never holds a dangling 'this' capture after the scene changes.
+    ~LevelManagerComponent() override
+    {
+        dae::InputManager::GetInstance().BindKeyboardInput(
+            SDL_SCANCODE_F1,
+            std::make_unique<dae::LambdaCommand>([](){}),
+            dae::InputState::Up);
     }
 
     void Render() override {}
@@ -74,5 +86,4 @@ private:
     float m_timer{ COMPLETE_DELAY };
 
     dae::Subject m_subject;
-    static constexpr float COMPLETE_DELAY = 3.5f;
 };

@@ -22,12 +22,7 @@ add_library(minigin STATIC
   "Minigin/RenderComponent.cpp"
   "Minigin/TextComponent.h"
   "Minigin/TextComponent.cpp"
-  "Minigin/FPSComponent.h"
-  "Minigin/FPSComponent.cpp"
   "Minigin/TimeSingleton.h"
-  "Minigin/RotationComponent.h"
-  "Minigin/BenchmarkComponent.h"
-  "Minigin/BenchmarkComponent.cpp"
   "Minigin/Command.h"
   "Minigin/Observer.h"
   "Minigin/Event.h"
@@ -197,9 +192,6 @@ if(EMSCRIPTEN)
   set(TARGET_NAME minigin_web)
   add_executable(${TARGET_NAME}
     BurgerTime/Main.cpp
-    "BurgerTime/BaseState.h"
-    "BurgerTime/StateMachine.h"
-    "BurgerTime/StateMachine.cpp"
     "BurgerTime/HealthComponent.h"
     "BurgerTime/HealthComponent.cpp"
     "BurgerTime/LevelMap.h"
@@ -236,9 +228,6 @@ else()
   set(TARGET_NAME minigin_game)
   add_executable(${TARGET_NAME} WIN32
     BurgerTime/Main.cpp
-    "BurgerTime/BaseState.h"
-    "BurgerTime/StateMachine.h"
-    "BurgerTime/StateMachine.cpp"
     "BurgerTime/HealthComponent.h"
     "BurgerTime/HealthComponent.cpp"
     "BurgerTime/LevelMap.h"

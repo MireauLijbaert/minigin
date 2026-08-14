@@ -26,8 +26,8 @@ public:
     {
         switch (m_type)
         {
-        case EnemyType::Egg:    return 200;
-        case EnemyType::Pickle: return 300;
+        case EnemyType::Pickle: return 200;
+        case EnemyType::Egg:    return 300;
         default:                return 100;
         }
     }

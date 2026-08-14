@@ -49,7 +49,7 @@ public:
         }
     }
 
-    // Register a callback that fires once when the player reaches 10 000 points.
+    // Register a callback that fires once when the player reaches 20 000 points.
     void RegisterBonusLifeCallback(std::function<void()> cb) { m_bonusLifeCb = std::move(cb); }
 
     int  GetScore()   const { return m_score; }
@@ -255,13 +255,14 @@ public:
 
     void Render() override
     {
-        if (!m_tex || m_lives <= 0) return;
+        const int extraLives = m_lives - 1; // display remaining respawns, not total lives
+        if (!m_tex || extraLives <= 0) return;
         SDL_Renderer* renderer = dae::Renderer::GetInstance().GetSDLRenderer();
         SDL_Texture*  sdlTex   = m_tex->GetSDLTexture();
         if (!sdlTex) return;
 
         constexpr float GAP = 4.f;
-        for (int i = 0; i < m_lives; ++i)
+        for (int i = 0; i < extraLives; ++i)
         {
             SDL_FRect dst{ m_posX + static_cast<float>(i) * (m_iconW + GAP),
                            m_posY, m_iconW, m_iconH };
@@ -320,6 +321,15 @@ public:
             }),
             dae::InputState::Down
         );
+    }
+
+    // Overwrite F2 with a no-op on destruction so InputManager never holds a dangling capture.
+    ~MuteToggleComponent() override
+    {
+        dae::InputManager::GetInstance().BindKeyboardInput(
+            SDL_SCANCODE_F2,
+            std::make_unique<dae::LambdaCommand>([](){}),
+            dae::InputState::Down);
     }
 
     void Update() override {}

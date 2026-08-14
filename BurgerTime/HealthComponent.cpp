@@ -17,6 +17,7 @@ void dae::HealthComponent::LoseLife()
 
 void dae::HealthComponent::GainLife()
 {
+    if (m_Lives >= m_MaxLives) return;
     ++m_Lives;
 
     Event event{ "LifeChanged" };
