@@ -15,7 +15,7 @@ dae::RenderComponent::~RenderComponent()
 
 void dae::RenderComponent::Render()
 {
-	if (!m_texture) return;
+	if (!m_visible || !m_texture) return;
 
 	SDL_Texture* tex = m_texture->GetSDLTexture();
 	if (!tex) return;

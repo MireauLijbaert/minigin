@@ -40,6 +40,8 @@ namespace dae
 		// Optional RGB tint (255,255,255 = no tint). Applied and restored each frame.
 		void SetColorMod(uint8_t r, uint8_t g, uint8_t b) { m_r = r; m_g = g; m_b = b; }
 
+		void SetVisible(bool v) { m_visible = v; }
+
 	private:
 		std::shared_ptr<Texture2D> m_texture{};
 		float     m_width     { 0.f };
@@ -47,6 +49,7 @@ namespace dae
 		bool      m_hasSrcRect{ false };
 		SDL_FRect m_srcRect   {};
 		bool      m_flipH     { false };
+		bool      m_visible   { true };
 		uint8_t   m_r{ 255 }, m_g{ 255 }, m_b{ 255 };
 	};
 }

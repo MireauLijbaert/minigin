@@ -515,11 +515,23 @@ static void LoadLevel(int levelNum)
         const int bonusCycle = (fileLevel - 1) % 3; // 0=ice cream, 1=coffee, 2=fries
         const std::string bonusTex = "bt_bonus_" + std::to_string(bonusCycle + 1) + ".png";
         const int bonusScore = (bonusCycle + 1) * 500;  // 500 / 1000 / 1500
+
+        // Position the object at the top-left corner of the sprite
+        // (center = bonusPos, size = charW × charW, anchor = bottom-center)
+        bonusObj->SetLocalPosition(bonusPos.x - charW * 0.5f, bonusPos.y - charW);
+
+        auto bonusRender = std::make_unique<dae::RenderComponent>(*bonusObj);
+        bonusRender->SetTexture(bonusTex);
+        bonusRender->SetSize(charW, charW);
+        bonusRender->SetVisible(false);
+        auto* bonusRenderPtr = bonusRender.get();
+        bonusObj->AddComponent(std::move(bonusRender));
+
         auto bonusComp = std::make_unique<BonusItemComponent>(
             *bonusObj, bonusPos, charW, playerMovePtr, pepperPtr,
+            bonusRenderPtr,
             /*score*/  bonusScore,
-            /*active*/ 6.f,
-            bonusTex
+            /*active*/ 6.f
         );
         bonusPtr = bonusComp.get();
         bonusObj->AddComponent(std::move(bonusComp));

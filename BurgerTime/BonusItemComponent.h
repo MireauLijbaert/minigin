@@ -6,14 +6,9 @@
 #include "PepperComponent.h"
 #include "ScoreManager.h"
 #include "TimeSingleton.h"
-#include "Renderer.h"
-#include "ResourceManager.h"
-#include "Texture2D.h"
+#include "RenderComponent.h"
 #include "GameObject.h"
-#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
-#include <memory>
-#include <string>
 
 // Bonus item that appears every CUPS_PER_BONUS burger pieces landing in cups.
 // Gives score + 1 pepper charge on pickup.
@@ -21,24 +16,26 @@ class BonusItemComponent : public dae::BaseComponent
 {
 public:
     dae::Subject& GetSubject() { return m_subject; }
+
     BonusItemComponent(dae::GameObject& owner,
                        glm::vec2 worldPos,        // center of the item (world coords)
                        float size,                 // width = height (match charW)
                        PlatformMovementComponent* player,
                        PepperComponent* pepper,
-                       int score             = 500,
-                       float activeTime      = 6.f,
-                       const std::string& textureName = "")
+                       dae::RenderComponent* renderComp,
+                       int score = 500,
+                       float activeTime = 6.f)
         : BaseComponent(owner)
         , m_pos{ worldPos }
         , m_halfSize{ size * 0.5f }
         , m_player{ player }
         , m_pepper{ pepper }
+        , m_renderComp{ renderComp }
         , m_score{ score }
         , m_activeTime{ activeTime }
     {
-        if (!textureName.empty())
-            m_tex = dae::ResourceManager::GetInstance().LoadTexture(textureName);
+        if (m_renderComp)
+            m_renderComp->SetVisible(false);
     }
 
     // Called by each BurgerPieceComponent when it lands in a cup.
@@ -50,6 +47,7 @@ public:
         {
             m_active = true;
             m_timer  = m_activeTime;
+            if (m_renderComp) m_renderComp->SetVisible(true);
             m_subject.NotifyObservers(dae::Event("BonusAppeared"), GetOwner());
         }
     }
@@ -64,6 +62,7 @@ public:
         if (m_timer <= 0.f)
         {
             m_active = false;
+            if (m_renderComp) m_renderComp->SetVisible(false);
             return;
         }
 
@@ -78,41 +77,17 @@ public:
         }
     }
 
-    void Render() override
-    {
-        if (!m_active) return;
-
-        SDL_Renderer* r = dae::Renderer::GetInstance().GetSDLRenderer();
-        SDL_FRect rect{
-            m_pos.x - m_halfSize,
-            m_pos.y - m_halfSize * 2.f,  // anchor bottom-center like characters
-            m_halfSize * 2.f,
-            m_halfSize * 2.f
-        };
-
-        if (m_tex)
-        {
-            SDL_RenderTexture(r, m_tex->GetSDLTexture(), nullptr, &rect);
-        }
-        else
-        {
-            // Fallback: gold rectangle
-            SDL_SetRenderDrawColor(r, 255, 215, 0, 255);
-            SDL_RenderFillRect(r, &rect);
-            SDL_SetRenderDrawColor(r, 200, 100, 0, 255);
-            SDL_RenderRect(r, &rect);
-        }
-    }
+    void Render() override {} // RenderComponent handles drawing
 
 private:
-    std::shared_ptr<dae::Texture2D> m_tex;
     glm::vec2 m_pos;
     float     m_halfSize;
     PlatformMovementComponent* m_player;
     PepperComponent*           m_pepper;
+    dae::RenderComponent*      m_renderComp;
     int   m_score;
     float m_activeTime;
-    float m_timer{ 0.f };
+    float m_timer { 0.f };
     bool  m_active{ false };
     int   m_cupCount{ 0 };
 
@@ -124,6 +99,7 @@ private:
     {
         m_active = false;
         m_timer  = 0.f;
+        if (m_renderComp) m_renderComp->SetVisible(false);
         ScoreManager::GetInstance().AddScore(m_score);
         m_pepper->AddCharge(1);
         m_subject.NotifyObservers(dae::Event("BonusPickedUp"), GetOwner());
