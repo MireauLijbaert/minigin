@@ -161,22 +161,56 @@ LevelData LevelLoader::Load(const std::string& filePath, const LevelTransform& t
                 data.burgers.push_back(def);
             }
 
-            if (c == 'C')
-            {
-                CupDef cup{};
-                cup.row    = row;
-                cup.col    = col;
-                cup.worldY = transform.WorldY(
-                    static_cast<float>(GridPlatformY(row)) + 9.f);
-                data.cups.push_back(cup);
-            }
+            // C cups are detected in a separate all-lines pass below.
 
             if (c == 'S')
             {
-                // col <= 4 → enters from left, col > 4 enters from right
+               
                 float sx = (col <= 4) ? -16.f : 224.f;
                 float sy = static_cast<float>(GridPlatformY(row));
                 spawnPoints.push_back({ sx, sy });
+            }
+        }
+    }
+
+    // --- Cups ---
+  
+    for (int i = 0; i < static_cast<int>(lines.size()); ++i)
+    {
+        const std::string& l = lines[i];
+        int cupRow = i / 2;
+        for (int col = 0; col <= 9; ++col)
+        {
+            int pos = col * 2;
+            char c = (pos < static_cast<int>(l.size())) ? l[pos] : ' ';
+            if (c == 'C')
+            {
+                CupDef cup{};
+                cup.row    = cupRow;
+                cup.col    = col;
+                cup.worldY = transform.WorldY(
+                    static_cast<float>(GridPlatformY(cupRow)) + 9.f);
+                data.cups.push_back(cup);
+            }
+        }
+    }
+
+
+    if (!data.cups.empty())
+    {
+        int maxRow = 0;
+        for (const auto& cup : data.cups) maxRow = std::max(maxRow, cup.row);
+        if (maxRow < 11)
+        {
+            const float bottomWorldY = transform.WorldY(
+                static_cast<float>(GridPlatformY(11)) + 9.f);
+            for (auto& cup : data.cups)
+            {
+                if (cup.row == maxRow)
+                {
+                    cup.row    = 11;
+                    cup.worldY = bottomWorldY;
+                }
             }
         }
     }
