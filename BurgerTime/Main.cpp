@@ -72,37 +72,6 @@ static void LoadGameOverScreen();
 static void LoadTitleScreen();
 static void LoadLevel(int levelNum);
 
-// Enemy type helpers (int from LevelLoader → EnemyType enum)
-// 0=Hotdog, 1=Egg, 2=Pickle — matches EnemySpawnDef::type
-
-static void SetupEnemyClips(AnimatedSpriteComponent* anim, EnemyType type)
-{
-    switch (type)
-    {
-    case EnemyType::Egg:
-        anim->AddClip("walk_d",  "bt_egg_walk_d.png",   2, 6.f);
-        anim->AddClip("walk_h",  "bt_egg_walk_h.png",   2, 6.f);
-        anim->AddClip("walk_u",  "bt_egg_walk_u.png",   2, 6.f);
-        anim->AddClip("squish",  "bt_egg_squish.png",   4, 6.f, false);
-        anim->AddClip("stunned", "bt_egg_stunned.png",  2, 4.f);
-        break;
-    case EnemyType::Pickle:
-        anim->AddClip("walk_d",  "bt_pickle_walk_d.png",   2, 6.f);
-        anim->AddClip("walk_h",  "bt_pickle_walk_h.png",   2, 6.f);
-        anim->AddClip("walk_u",  "bt_pickle_walk_u.png",   2, 6.f);
-        anim->AddClip("squish",  "bt_pickle_squish.png",   4, 6.f, false);
-        anim->AddClip("stunned", "bt_pickle_stunned.png",  2, 4.f);
-        break;
-    default: // Hotdog
-        anim->AddClip("walk_d",  "bt_hotdog_walk_d.png",   2, 6.f);
-        anim->AddClip("walk_h",  "bt_hotdog_walk_h.png",   2, 6.f);
-        anim->AddClip("walk_u",  "bt_hotdog_walk_u.png",   2, 6.f);
-        anim->AddClip("squish",  "bt_hotdog_squish.png",   4, 6.f, false);
-        anim->AddClip("stunned", "bt_hotdog_stunned.png",  2, 4.f);
-        break;
-    }
-}
-
 static void LoadLevel(int levelNum)
 {
     s_currentLevel = levelNum;
@@ -386,7 +355,7 @@ static void LoadLevel(int levelNum)
         enemyObj->AddComponent(std::move(enemyRender));
 
         auto enemyAnim = std::make_unique<AnimatedSpriteComponent>(*enemyObj, enemyRenderPtr);
-        SetupEnemyClips(enemyAnim.get(), eType);
+        EnemyAnimatorComponent::RegisterClips(enemyAnim.get(), eType);
         AnimatedSpriteComponent* enemyAnimPtr = enemyAnim.get();
         enemyObj->AddComponent(std::move(enemyAnim));
 
