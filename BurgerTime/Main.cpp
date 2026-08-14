@@ -121,17 +121,7 @@ static void LoadLevel(int levelNum)
     playerObj->AddComponent(std::move(playerRender));
 
     auto playerAnim = std::make_unique<AnimatedSpriteComponent>(*playerObj, playerRenderPtr);
-    playerAnim->AddClip("idle",     "bt_player_idle.png",     1, 1.f);          // standing still (front-facing)
-    playerAnim->AddClip("idle_u",   "bt_player_idle_u.png",   1, 1.f);          // standing still (back-turned, after moving up)
-    playerAnim->AddClip("walk_h",   "bt_player_walk_l.png",   3, 8.f);          // sideways, base=LEFT, flip for RIGHT
-    playerAnim->AddClip("walk_u",   "bt_player_walk_u.png",   3, 8.f);          // climbing up
-    playerAnim->AddClip("walk_d",   "bt_player_walk_d.png",   3, 8.f);          // walking down (front-facing)
-    playerAnim->AddClip("die",      "bt_player_die.png",      6, 6.f, false);   // death, non-looping
-    playerAnim->AddClip("pepper_d",   "bt_player_pepper_d.png",   1, 1.f);        // throw down
-    playerAnim->AddClip("pepper_h",   "bt_player_pepper_h.png",   1, 1.f);        // throw sideways
-    playerAnim->AddClip("pepper_u",   "bt_player_pepper_u.png",   1, 1.f);        // throw up
-    // 2-frame celebrate: [hands-up | idle], alternates 8 times over ~3.5s at 4.5fps
-    playerAnim->AddClip("celebrate",  "bt_player_celebrate.png",   2, 4.5f);
+    PlayerAnimatorComponent::RegisterClips(playerAnim.get());
     AnimatedSpriteComponent* playerAnimPtr = playerAnim.get();
     playerObj->AddComponent(std::move(playerAnim));
 
@@ -187,16 +177,7 @@ static void LoadLevel(int levelNum)
         p2Obj->AddComponent(std::move(p2Render));
 
         auto p2Anim = std::make_unique<AnimatedSpriteComponent>(*p2Obj, p2RenderPtr);
-        p2Anim->AddClip("idle",      "bt_player_idle.png",       1, 1.f);
-        p2Anim->AddClip("idle_u",    "bt_player_idle_u.png",     1, 1.f);
-        p2Anim->AddClip("walk_h",    "bt_player_walk_l.png",     3, 8.f);
-        p2Anim->AddClip("walk_u",    "bt_player_walk_u.png",     3, 8.f);
-        p2Anim->AddClip("walk_d",    "bt_player_walk_d.png",     3, 8.f);
-        p2Anim->AddClip("die",       "bt_player_die.png",        6, 6.f, false);
-        p2Anim->AddClip("pepper_d",  "bt_player_pepper_d.png",   1, 1.f);
-        p2Anim->AddClip("pepper_h",  "bt_player_pepper_h.png",   1, 1.f);
-        p2Anim->AddClip("pepper_u",  "bt_player_pepper_u.png",   1, 1.f);
-        p2Anim->AddClip("celebrate", "bt_player_celebrate.png",  2, 4.5f);
+        PlayerAnimatorComponent::RegisterClips(p2Anim.get());
         // Tint player 2 blue so they're visually distinct
         p2Anim->SetColorMod(100, 180, 255);
         AnimatedSpriteComponent* p2AnimPtr = p2Anim.get();

@@ -127,6 +127,22 @@ public:
         : BaseComponent(owner), m_player{ player }, m_anim{ anim }
     {}
 
+    // Register the standard player clip set onto an AnimatedSpriteComponent.
+    // Called once after the component is created.
+    static void RegisterClips(AnimatedSpriteComponent* anim)
+    {
+        anim->AddClip("idle",      "bt_player_idle.png",       1, 1.f);
+        anim->AddClip("idle_u",    "bt_player_idle_u.png",     1, 1.f);
+        anim->AddClip("walk_h",    "bt_player_walk_l.png",     3, 8.f);  // base=LEFT, flip for RIGHT
+        anim->AddClip("walk_u",    "bt_player_walk_u.png",     3, 8.f);
+        anim->AddClip("walk_d",    "bt_player_walk_d.png",     3, 8.f);
+        anim->AddClip("die",       "bt_player_die.png",        6, 6.f, false);
+        anim->AddClip("pepper_d",  "bt_player_pepper_d.png",   1, 1.f);
+        anim->AddClip("pepper_h",  "bt_player_pepper_h.png",   1, 1.f);
+        anim->AddClip("pepper_u",  "bt_player_pepper_u.png",   1, 1.f);
+        anim->AddClip("celebrate", "bt_player_celebrate.png",  2, 4.5f);
+    }
+
     // Called by PepperComponent callback when pepper is fired
     void OnPepperFired()
     {
